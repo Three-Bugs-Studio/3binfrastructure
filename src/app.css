@@ -1,0 +1,135 @@
+:root {
+	--paper: #fdfaf0;
+	--card: #fffefa;
+	--ink: #26262b;
+	--ink-soft: #4f4d55;
+	--grid: #dde7f3;
+	--red: #bb2d1b;
+	--blue: #1a569f;
+	--yellow: #ffe761;
+	--pink: #ffc9d9;
+	--mint: #c3f0d7;
+	--sky: #c9e6ff;
+	--board: #2d3b36;
+	--chalk: #f5f2e6;
+	--font-body: 'Patrick Hand', 'Comic Sans MS', 'Segoe Print', cursive;
+	--font-title: 'Gochi Hand', 'Comic Sans MS', 'Segoe Print', cursive;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background-color: var(--paper);
+	background-image:
+		linear-gradient(var(--grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+	background-size: 30px 30px;
+	color: var(--ink);
+	font: 1.3rem/1.45 var(--font-body);
+}
+
+h1,
+h2,
+h3 {
+	font-family: var(--font-title);
+	font-weight: 400;
+	line-height: 1.15;
+}
+
+h1 {
+	margin: 2.5rem 0 0.75rem;
+	font-size: clamp(2.75rem, 7vw, 4.25rem);
+}
+
+h2 {
+	font-size: clamp(1.9rem, 4vw, 2.5rem);
+}
+
+a {
+	color: var(--blue);
+}
+
+a:focus-visible {
+	outline: 3px dashed var(--red);
+	outline-offset: 3px;
+}
+
+.intro {
+	max-width: 42rem;
+	color: var(--ink-soft);
+}
+
+/* highlighter pen */
+.hl {
+	background: linear-gradient(
+		transparent 58%,
+		var(--yellow) 58%,
+		var(--yellow) 92%,
+		transparent 92%
+	);
+}
+
+/* The outline sits on a pseudo element so the wobble filter never touches the text. */
+.doodle {
+	position: relative;
+	isolation: isolate;
+}
+
+.doodle::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border: 2.5px solid var(--ink);
+	border-radius: 14px 22px 12px 26px / 24px 12px 26px 14px;
+	background: var(--card);
+	filter: url(#sketch);
+}
+
+/* sticky note */
+.note {
+	padding: 0.75rem 1.1rem;
+	background: var(--yellow);
+	box-shadow: 2px 4px 7px rgb(0 0 0 / 0.18);
+	rotate: -0.5deg;
+}
+
+/* jump links, also used as the site navigation */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+}
+
+.chips a {
+	padding: 0.1rem 0.8rem;
+	border: 2px solid var(--ink);
+	border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+	background: var(--card);
+	color: var(--ink);
+	text-decoration: none;
+}
+
+.chips a:hover,
+.chips a[aria-current='page'] {
+	background: var(--yellow);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+
+	.chips a {
+		transition: rotate 0.15s;
+	}
+
+	.chips a:hover {
+		rotate: -2deg;
+	}
+}
