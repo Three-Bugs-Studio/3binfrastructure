@@ -1,21 +1,30 @@
 <script lang="ts">
 	import '../app.css';
 	import favicon from '#lib/assets/favicon.svg';
-	import { resolve } from '$app/paths';
+	import logo from '#lib/assets/logo.svg';
+	import { asset, resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
 
 	const links = [
-		{ href: resolve('/architecture'), label: 'System Architecture' },
-		{ href: resolve('/databases'), label: 'Database Concepts' },
+		{ href: resolve('/architecture'), label: 'Architecture' },
+		{ href: resolve('/databases'), label: 'Databases' },
+		{ href: resolve('/aws'), label: 'AWS Scaling' },
+		{ href: resolve('/devops'), label: 'DevOps' },
+		{ href: resolve('/vps'), label: 'VPS Deploy' },
+		{ href: resolve('/subjects'), label: 'Subjects' },
 		{ href: resolve('/courses'), label: 'Courses' }
 	];
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<link rel="icon" href={asset('favicon.ico')} sizes="32x32" />
+	<link rel="icon" href={favicon} type="image/svg+xml" />
+	<link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
+	<link rel="manifest" href={asset('site.webmanifest')} />
+	<meta name="theme-color" content="#ffe761" />
 </svelte:head>
 
 <svg width="0" height="0" aria-hidden="true" class="filters">
@@ -29,10 +38,13 @@
 <a class="skip" href="#main">Skip to content</a>
 
 <header>
-	<a class="brand" href={resolve('/')}>3B <span class="hl">Infrastructure</span></a>
+	<a class="brand" href={resolve('/')}><img src={logo} alt="3B Infrastructure home" /></a>
 	<nav class="chips" aria-label="Main">
 		{#each links as link (link.href)}
-			<a href={link.href} aria-current={page.url.pathname === link.href ? 'page' : undefined}>
+			<a
+				href={link.href}
+				aria-current={page.url.pathname.startsWith(link.href) ? 'page' : undefined}
+			>
 				{link.label}
 			</a>
 		{/each}
@@ -80,11 +92,13 @@
 	}
 
 	.brand {
-		color: var(--ink);
-		font-family: var(--font-title);
-		font-size: 2rem;
-		text-decoration: none;
 		rotate: -1deg;
+	}
+
+	.brand img {
+		display: block;
+		height: 3.75rem;
+		max-width: 100%;
 	}
 
 	footer {
