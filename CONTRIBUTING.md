@@ -34,10 +34,19 @@ Everything on the site lives in plain TypeScript data files, so most changes nee
 | -------------------------------- | -------------------------------------------------------------------------------------------------- |
 | A System Architecture topic      | [`src/lib/architecture.ts`](src/lib/architecture.ts)                                               |
 | A Database Concepts topic        | [`src/lib/databases.ts`](src/lib/databases.ts)                                                     |
+| An AWS topic                     | [`src/lib/aws.ts`](src/lib/aws.ts)                                                                 |
+| A DevOps topic                   | [`src/lib/devops.ts`](src/lib/devops.ts)                                                           |
+| A VPS deployment step            | [`src/lib/vps.ts`](src/lib/vps.ts)                                                                 |
+| An engineering subject           | [`src/lib/subjects/`](src/lib/subjects/)                                                           |
 | The course list                  | [`src/lib/courses.ts`](src/lib/courses.ts)                                                         |
 | How diagrams or topics are drawn | [`src/lib/Sketch.svelte`](src/lib/Sketch.svelte), [`src/lib/Topics.svelte`](src/lib/Topics.svelte) |
+| How demos play                   | [`src/lib/Demo.svelte`](src/lib/Demo.svelte)                                                       |
 
-Diagrams are lists of nodes and edges. Node `x` and `y` are the centre of the shape, on a canvas 480 wide and `h` tall. `npm test` fails if a node leaves the canvas, overlaps another node, or an edge points at a node that does not exist.
+Diagrams are lists of nodes and edges. Node `x` and `y` are the centre of the shape, on a canvas 480 wide and `h` tall.
+
+Every topic needs an animated demo. Each entry in `steps` describes one whole picture: `say` is the caption, `send` moves dots between nodes, and `light`, `down`, `hide` and `set` circle, cross out, hide or relabel nodes for that step. A caption starting `SKIPPED:` or `SET UP:` gets a coloured stamp.
+
+`npm test` fails if a topic has no demo, a node leaves the canvas or overlaps another, or a step mentions a node that does not exist.
 
 Please keep the writing plain and accurate, and link course pages that are free to open.
 
