@@ -1,12 +1,17 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Sketch from '#lib/Sketch.svelte';
+	import Demo from '#lib/Demo.svelte';
 	import { architecture } from '#lib/architecture.js';
+	import { aws } from '#lib/aws.js';
 	import { courses } from '#lib/courses.js';
 	import { databases } from '#lib/databases.js';
-	import type { Sketch as SketchData } from '#lib/sketch.js';
+	import { devops } from '#lib/devops.js';
+	import type { Sketch } from '#lib/sketch.js';
+	import { subjects } from '#lib/subjects/index.js';
+	import { vps } from '#lib/vps.js';
 
-	const hero: SketchData = {
+	const hero: Sketch = {
+		kind: 'A tiny system',
 		alt: 'A small system: a user reaches a load balancer that shares requests between two app servers, which use a cache and a database.',
 		h: 250,
 		nodes: [
@@ -24,6 +29,36 @@
 			{ from: 'a', to: 'cache' },
 			{ from: 'a', to: 'db' },
 			{ from: 'b', to: 'db' }
+		],
+		steps: [
+			{
+				say: 'You click a link, and your request sets off.',
+				send: [['user', 'lb']],
+				light: ['user']
+			},
+			{
+				say: 'A load balancer picks a server that is not busy.',
+				send: [['lb', 'a']],
+				light: ['lb']
+			},
+			{
+				say: 'The server checks the cache, the quickest place to look.',
+				send: [['a', 'cache']],
+				light: ['cache']
+			},
+			{
+				say: 'It is not there, so the server asks the database.',
+				send: [['a', 'db']],
+				light: ['db']
+			},
+			{
+				say: 'If one server dies, the other carries on and you never notice.',
+				down: ['a'],
+				send: [
+					['lb', 'b'],
+					['b', 'db']
+				]
+			}
 		]
 	};
 
@@ -31,7 +66,7 @@
 		{
 			href: resolve('/architecture'),
 			title: 'System Architecture',
-			text: 'Layers, microservices, scaling, caching, queues and designing for failure.',
+			text: 'Architecture styles, trade-offs, how to design a system, and C4 diagrams at every level.',
 			count: `${architecture.length} topics`,
 			color: 'var(--yellow)',
 			tilt: '-1.5deg'
@@ -45,11 +80,43 @@
 			tilt: '1deg'
 		},
 		{
+			href: resolve('/aws'),
+			title: 'AWS Scaling',
+			text: 'Load balancing, Auto Scaling, Lambda, queues and databases that grow with you.',
+			count: `${aws.length} topics`,
+			color: 'var(--mint)',
+			tilt: '0.75deg'
+		},
+		{
+			href: resolve('/devops'),
+			title: 'DevOps',
+			text: 'CI/CD, Docker, Kubernetes, safe releases, observability and incident response.',
+			count: `${devops.length} topics`,
+			color: 'var(--pink)',
+			tilt: '-1deg'
+		},
+		{
+			href: resolve('/vps'),
+			title: 'VPS Deploy',
+			text: 'What to do after buying a VPS, and what goes wrong at each step if you skip it.',
+			count: `${vps.length} steps`,
+			color: 'var(--yellow)',
+			tilt: '1deg'
+		},
+		{
+			href: resolve('/subjects'),
+			title: 'Subjects',
+			text: 'From engineering maths and C to Arduino, Nuvoton and real-time Raspberry Pi.',
+			count: `${subjects.length} subjects`,
+			color: 'var(--mint)',
+			tilt: '-1deg'
+		},
+		{
 			href: resolve('/courses'),
 			title: 'Courses',
 			text: 'A hand-picked path from your first program to distributed systems.',
 			count: `${courses.length} steps`,
-			color: 'var(--pink)',
+			color: 'var(--sky)',
 			tilt: '-0.75deg'
 		}
 	];
@@ -71,7 +138,7 @@
 			databases, and the courses worth taking. Pick a page and start reading.
 		</p>
 	</div>
-	<Sketch sketch={hero} />
+	<Demo sketch={hero} />
 </section>
 
 <ul class="cards">
