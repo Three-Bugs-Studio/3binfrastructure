@@ -3,6 +3,7 @@ import type { Topic } from './sketch';
 const FOUNDATIONS = 'The foundations';
 const STYLES = 'Architecture styles';
 const DESIGN = 'Designing a system';
+const EVOLVE = 'From layers to microservices';
 const C4 = 'Drawing it: the C4 model';
 
 export const architecture: Topic[] = [
@@ -860,6 +861,479 @@ export const architecture: Topic[] = [
 				{
 					say: 'With no clear picture, the next shortcut looks harmless. Break the loop by keeping the map current.',
 					send: [['old', 'cut']]
+				}
+			]
+		}
+	},
+	{
+		id: 'modular-monolith',
+		part: EVOLVE,
+		title: 'Layers to modular monolith',
+		summary:
+			'Plain layers group code by technical job, so every controller sits with every other controller and any class can reach any other. As the system grows, nothing stops one feature from reaching into another. A modular monolith regroups the code by business capability, and each module keeps its own layers.',
+		points: [
+			[
+				'The problem with layers',
+				'public classes everywhere make code hard to reuse, and easy to misuse.'
+			],
+			['Module', 'one business capability with its own Controller, Service, Repository and Model.'],
+			['Interface', 'the only door between modules. Everything else stays private.'],
+			[
+				'Internal and external',
+				'external services are for other modules, internal ones only for the module itself.'
+			],
+			[
+				'Why it pays off',
+				'still one deployment, but each module could later become its own service.'
+			]
+		],
+		tip: 'Controllers should call services, never repositories. Otherwise the layers exist in name only.',
+		sketch: {
+			kind: 'Component diagram',
+			alt: 'The Order module calls the Product module through its external interface. A direct call to the Product repository is blocked.',
+			h: 240,
+			nodes: [
+				{ id: 'om', label: 'Order module', x: 110, y: 120, w: 200, h: 228, shape: 'boundary' },
+				{ id: 'pm', label: 'Product module', x: 365, y: 120, w: 210, h: 228, shape: 'boundary' },
+				{ id: 'oc', label: 'Controller', x: 110, y: 62, w: 130, h: 36, fill: 'sky' },
+				{ id: 'os', label: 'Order service', x: 110, y: 130, w: 150, h: 36, fill: 'yellow' },
+				{ id: 'or', label: 'Repository', x: 110, y: 198, w: 130, h: 36, fill: 'mint' },
+				{ id: 'pi', label: 'Interface', x: 365, y: 62, w: 130, h: 36, fill: 'pink' },
+				{ id: 'ps', label: 'Product service', x: 365, y: 130, w: 150, h: 36, fill: 'yellow' },
+				{ id: 'pr', label: 'Repository', x: 365, y: 198, w: 130, h: 36, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'oc', to: 'os' },
+				{ from: 'os', to: 'or' },
+				{ from: 'pi', to: 'ps' },
+				{ from: 'ps', to: 'pr' }
+			],
+			steps: [
+				{
+					say: 'A request reaches the Order module and passes down its own layers.',
+					send: [['oc', 'os']],
+					light: ['os']
+				},
+				{
+					say: 'Order needs a product price, and reaches straight for the Product repository.',
+					send: [['os', 'pr']],
+					light: ['pr']
+				},
+				{ say: 'That is blocked. The repository is private to the Product module.', down: ['pr'] },
+				{
+					say: 'Order goes through the Product interface instead.',
+					send: [['os', 'pi']],
+					light: ['pi']
+				},
+				{
+					say: 'The Product module decides how to answer, so its insides can change freely.',
+					send: [
+						['pi', 'ps'],
+						['ps', 'pr']
+					],
+					light: ['ps']
+				}
+			]
+		}
+	},
+	{
+		id: 'dto',
+		title: 'DTOs: share only what is needed',
+		summary:
+			'A Model usually holds everything about a record, including things a caller should never see. Returning it directly is a common way data leaks. A Data Transfer Object carries only the fields one request needs.',
+		points: [
+			[
+				'Excessive data exposure',
+				'sending a whole object when the client asked for a small part of it.'
+			],
+			['External DTO', 'what other modules and clients may see.'],
+			['Internal DTO', 'richer data used only inside a module.'],
+			['Different views', 'a dropdown and a profile page can use different DTOs from one Model.']
+		],
+		tip: 'Never return a Model from a Controller. Decide field by field what leaves the module.',
+		sketch: {
+			kind: 'Data flow diagram',
+			alt: 'A user model holds name, avatar, email and card number. The DTO passes on only the name and avatar, so the client never sees the rest.',
+			h: 190,
+			nodes: [
+				{
+					id: 'm',
+					label: 'User Model\nname, avatar\nemail, card no.',
+					x: 80,
+					y: 95,
+					w: 148,
+					h: 92,
+					fill: 'pink'
+				},
+				{
+					id: 'd',
+					label: 'Friend DTO\nname, avatar',
+					x: 250,
+					y: 95,
+					w: 112,
+					h: 72,
+					fill: 'yellow'
+				},
+				{ id: 'c', label: 'Friend list\nscreen', x: 415, y: 95, w: 110, h: 72, fill: 'sky' }
+			],
+			edges: [
+				{ from: 'm', to: 'd' },
+				{ from: 'd', to: 'c' }
+			],
+			steps: [
+				{ say: 'The screen only needs to show a list of friends.', light: ['c'] },
+				{
+					say: 'Without a DTO, the whole Model is sent, card number included.',
+					hide: ['d'],
+					send: [['m', 'c']],
+					down: ['m']
+				},
+				{
+					say: 'The browser never used that field, but anyone can read it in the network tab.',
+					hide: ['d'],
+					light: ['c'],
+					set: { c: 'Card no.\nexposed!' }
+				},
+				{
+					say: 'With a DTO, the service copies just the two fields the screen needs.',
+					send: [['m', 'd']],
+					light: ['d']
+				},
+				{
+					say: 'Only those fields leave the system. Sensitive data has no way out.',
+					send: [['d', 'c']],
+					light: ['c']
+				}
+			]
+		}
+	},
+	{
+		id: 'service-discovery',
+		title: 'API Gateway and Service Discovery',
+		summary:
+			'Run each module as its own application and you have microservices, along with new problems. Clients would need to know every address, and in the cloud those addresses change on every restart. A gateway gives clients one address, and a registry keeps track of where each service is.',
+		points: [
+			['API Gateway', 'one front door for routing, filters and rate limits.'],
+			['Service Discovery', 'each service registers its name and address when it starts.'],
+			['Call by name', 'clients ask for order-service, not for an IP address.'],
+			[
+				'Spring example',
+				'Eureka is the registry, and a gateway route such as lb://order-service looks it up.'
+			]
+		],
+		tip: 'If a service URL contains an IP address or localhost, discovery is not really being used.',
+		sketch: {
+			kind: 'C4 Container diagram',
+			alt: 'A gateway asks Service Discovery where the order service is. After a restart the service registers a new address and traffic keeps flowing.',
+			h: 200,
+			nodes: [
+				{ id: 'fe', label: 'Frontend', x: 62, y: 100, w: 104, h: 56, fill: 'sky' },
+				{ id: 'gw', label: 'API\nGateway', x: 215, y: 100, w: 104, h: 66, fill: 'yellow' },
+				{ id: 'sd', label: 'Service\nDiscovery', x: 215, y: 32, w: 104, h: 56, fill: 'pink' },
+				{ id: 'os', label: 'Order service\n10.0.0.7', x: 400, y: 100, w: 140, h: 66, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'fe', to: 'gw', label: 'one URL' },
+				{ from: 'gw', to: 'os' },
+				{ from: 'os', to: 'sd', label: 'registers', dashed: true }
+			],
+			steps: [
+				{
+					say: 'When it starts, the service tells the registry its name and address.',
+					send: [['os', 'sd']],
+					light: ['sd']
+				},
+				{
+					say: 'The frontend knows only one address: the gateway.',
+					send: [['fe', 'gw']],
+					light: ['gw']
+				},
+				{
+					say: 'The gateway asks the registry where order-service is, then forwards the request.',
+					send: [
+						['gw', 'sd'],
+						['gw', 'os']
+					],
+					light: ['os']
+				},
+				{
+					say: 'The service restarts and gets a new address, so old hard-coded URLs would now fail.',
+					set: { os: 'Order service\n10.0.0.92' },
+					light: ['os'],
+					send: [['os', 'sd']]
+				},
+				{
+					say: 'The registry already has the new address, so the frontend never notices.',
+					set: { os: 'Order service\n10.0.0.92' },
+					send: [
+						['fe', 'gw'],
+						['gw', 'os']
+					]
+				}
+			]
+		}
+	},
+	{
+		id: 'database-per-service',
+		title: 'One database per service',
+		summary:
+			'Sharing a single database across microservices creates a bottleneck, and quietly couples them back together. Giving each service its own database means each one can scale and fail on its own.',
+		points: [
+			['Scale by need', 'grow the orders database for a sale without touching anything else.'],
+			['Stronger security', 'a compromised service can reach only its own data.'],
+			['Clear ownership', 'other services must ask through an API or an event.'],
+			['The cost', 'no joins across services, and keeping data consistent gets harder.']
+		],
+		tip: 'If two services read the same table, they are one service wearing two names.',
+		sketch: {
+			kind: 'C4 Container diagram',
+			alt: 'The order and product services each have their own database. During a sale, only the order database is scaled.',
+			h: 200,
+			nodes: [
+				{ id: 'o', label: 'Order service', x: 100, y: 45, w: 150, h: 52, fill: 'yellow' },
+				{ id: 'p', label: 'Product service', x: 360, y: 45, w: 150, h: 52, fill: 'sky' },
+				{ id: 'od', label: 'Orders DB', x: 100, y: 150, w: 130, h: 76, shape: 'db', fill: 'mint' },
+				{ id: 'pd', label: 'Products DB', x: 360, y: 150, w: 130, h: 76, shape: 'db', fill: 'mint' }
+			],
+			edges: [
+				{ from: 'o', to: 'od' },
+				{ from: 'p', to: 'pd' },
+				{ from: 'o', to: 'p', label: 'API', dashed: true }
+			],
+			steps: [
+				{
+					say: 'Each service owns its own data.',
+					send: [
+						['o', 'od'],
+						['p', 'pd']
+					]
+				},
+				{ say: 'A big sale floods the order service.', light: ['o'], send: [['o', 'od']] },
+				{
+					say: 'You scale just the orders database, and products are left alone.',
+					set: { od: 'Orders DB\nx 5' },
+					light: ['od']
+				},
+				{
+					say: 'Orders needs a product name, so it asks the Product service, not its database.',
+					set: { od: 'Orders DB\nx 5' },
+					send: [
+						['o', 'p'],
+						['p', 'pd']
+					]
+				}
+			]
+		}
+	},
+	{
+		id: 'kafka',
+		title: 'REST or Kafka between services',
+		summary:
+			'With REST, the caller waits for each service in turn, so a slow service slows the whole chain. With Kafka, a service writes an event to a durable log and moves on. Other services read it when they are ready.',
+		points: [
+			['Topic', 'a named stream of events, stored on disk.'],
+			['Partition', 'a topic is split so many consumers can share the work.'],
+			[
+				'Consumer group',
+				'consumers in a group divide the partitions, so each event is handled once per group.'
+			],
+			[
+				'Replica',
+				'copies of each partition on other brokers. If one broker dies, a copy takes over.'
+			],
+			['When to use which', 'REST when the caller needs an answer now, events when it does not.']
+		],
+		tip: 'Events can arrive twice, so make consumers safe to run again with the same event.',
+		sketch: {
+			kind: 'Data flow diagram',
+			alt: 'The order service writes an event to a Kafka topic. Billing and email consumers read it. A broker failure is covered by a replica.',
+			h: 205,
+			nodes: [
+				{ id: 'o', label: 'Order service', x: 75, y: 100, w: 130, h: 58, fill: 'sky' },
+				{
+					id: 'k',
+					label: 'Kafka topic\norder-placed',
+					x: 250,
+					y: 60,
+					w: 130,
+					h: 66,
+					fill: 'yellow'
+				},
+				{ id: 'r', label: 'Replica', x: 250, y: 165, w: 130, h: 44, fill: 'pink' },
+				{ id: 'b', label: 'Billing', x: 415, y: 45, w: 110, h: 50, fill: 'mint' },
+				{ id: 'e', label: 'Email', x: 415, y: 150, w: 110, h: 50, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'o', to: 'k' },
+				{ from: 'k', to: 'b' },
+				{ from: 'k', to: 'e' },
+				{ from: 'k', to: 'r', dashed: true }
+			],
+			steps: [
+				{
+					say: 'The order service writes one event, and replies to the user straight away.',
+					send: [['o', 'k']],
+					light: ['k']
+				},
+				{
+					say: 'Kafka copies the event to a replica on another broker.',
+					send: [['k', 'r']],
+					light: ['r']
+				},
+				{
+					say: 'Each consumer group reads the event at its own speed.',
+					send: [
+						['k', 'b'],
+						['k', 'e']
+					]
+				},
+				{
+					say: 'The Email service goes down. Orders keep working, and events wait in the log.',
+					down: ['e'],
+					send: [['o', 'k']]
+				},
+				{
+					say: 'When it returns, Email carries on from where it stopped. Nothing is lost.',
+					send: [['k', 'e']],
+					light: ['e']
+				}
+			]
+		}
+	},
+	{
+		id: 'frontend-styles',
+		title: 'Frontend architecture styles',
+		summary:
+			'Frontends need structure as much as backends do. The usual path runs from technical layers, to components grouped by business domain, to headless components where behaviour is completely separate from appearance.',
+		points: [
+			[
+				'Layer-based',
+				'separate folders for UI, handlers, API calls and state. Simple, but one feature ends up spread across all of them.'
+			],
+			[
+				'Modularized component',
+				'each domain, such as Cart, holds its own UI, Hook, API calls and state.'
+			],
+			['Headless component', 'a reusable piece with behaviour and no styling of its own.'],
+			['Shared parts', 'keep one config for backend URLs, and one helper for all requests.']
+		],
+		tip: 'A headless component should know nothing about your business. If it mentions a product, it is not headless.',
+		sketch: {
+			kind: 'Component diagram',
+			alt: 'One headless data list provides paging and state. A product table and a tour card grid both use it with different styling.',
+			h: 200,
+			nodes: [
+				{
+					id: 'h',
+					label: 'useDataList\npaging + state',
+					x: 240,
+					y: 45,
+					w: 170,
+					h: 68,
+					fill: 'yellow'
+				},
+				{
+					id: 'a',
+					label: 'Product table\nits own style',
+					x: 105,
+					y: 155,
+					w: 170,
+					h: 66,
+					fill: 'sky'
+				},
+				{ id: 'b', label: 'Tour cards\nits own style', x: 375, y: 155, w: 170, h: 66, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'a', to: 'h' },
+				{ from: 'b', to: 'h' }
+			],
+			steps: [
+				{ say: 'A headless hook handles paging and state, and draws nothing.', light: ['h'] },
+				{
+					say: 'The product table uses it and decides how rows should look.',
+					send: [['a', 'h']],
+					light: ['a']
+				},
+				{
+					say: 'The tour cards reuse the same logic with a completely different look.',
+					send: [['b', 'h']],
+					light: ['b']
+				},
+				{
+					say: 'Fix a paging bug once, and both screens get the fix.',
+					set: { h: 'useDataList\nbug fixed' },
+					send: [
+						['h', 'a'],
+						['h', 'b']
+					],
+					light: ['h']
+				}
+			]
+		}
+	},
+	{
+		id: 'four-plus-one',
+		title: 'The 4+1 view model',
+		summary:
+			"One diagram cannot satisfy everyone, because a developer, a tester and an operations engineer ask different questions. Philippe Kruchten's 4+1 model describes one system from four views, then ties them together with scenarios.",
+		points: [
+			['Logical view', 'what the system does, for end users. Class diagrams fit here.'],
+			['Process view', 'what runs at the same time, for performance and scaling.'],
+			['Development view', 'how the code is organised, for programmers.'],
+			['Physical view', 'what runs on which machine, for system engineers.'],
+			[
+				'Scenarios',
+				'the +1. Key use cases that walk through the other four views and check they agree.'
+			]
+		],
+		tip: 'Pick the views your audience needs. A small system can often merge a few of them.',
+		links: [['4+1 view model', 'https://en.wikipedia.org/wiki/4%2B1_architectural_view_model']],
+		sketch: {
+			kind: '4+1 view model',
+			alt: 'Scenarios sit at the centre of four views: logical, development, process and physical.',
+			h: 205,
+			nodes: [
+				{ id: 's', label: 'Scenarios', x: 240, y: 102, w: 120, h: 60, fill: 'yellow' },
+				{ id: 'l', label: 'Logical\nfunctionality', x: 80, y: 42, w: 140, h: 62, fill: 'sky' },
+				{
+					id: 'd',
+					label: 'Development\ncode structure',
+					x: 400,
+					y: 42,
+					w: 140,
+					h: 62,
+					fill: 'mint'
+				},
+				{ id: 'p', label: 'Process\nconcurrency', x: 80, y: 162, w: 140, h: 62, fill: 'mint' },
+				{ id: 'f', label: 'Physical\nmachines', x: 400, y: 162, w: 140, h: 62, fill: 'sky' }
+			],
+			edges: [
+				{ from: 's', to: 'l', plain: true },
+				{ from: 's', to: 'd', plain: true },
+				{ from: 's', to: 'p', plain: true },
+				{ from: 's', to: 'f', plain: true }
+			],
+			steps: [
+				{ say: 'Take one scenario: a customer places an order.', light: ['s'] },
+				{
+					say: 'Logical: which objects are involved? Order, Customer and Product.',
+					send: [['s', 'l']],
+					light: ['l']
+				},
+				{
+					say: 'Process: what runs in parallel? Payment and stock checks at the same time.',
+					send: [['s', 'p']],
+					light: ['p']
+				},
+				{
+					say: 'Development: which package holds this code, and which team owns it?',
+					send: [['s', 'd']],
+					light: ['d']
+				},
+				{
+					say: 'Physical: which servers does the request actually touch?',
+					send: [['s', 'f']],
+					light: ['f']
 				}
 			]
 		}
