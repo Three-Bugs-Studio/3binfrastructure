@@ -2,11 +2,24 @@
 
 Thanks for helping improve 3B Infrastructure. Fixing a wrong explanation is just as valuable as adding a new topic.
 
+## How to contribute
+
+The `main` branch is protected, so all changes arrive through a fork:
+
+1. [Fork this repository](https://github.com/Three-Bugs-Studio/3binfrastructure/fork) to your own account.
+2. Clone your fork and create a branch for your change.
+3. Push the branch to your fork and open a pull request against `main`.
+4. A maintainer reviews it. CI must pass and the pull request needs one approval before a maintainer merges it.
+
+For your first contribution, a maintainer has to approve the CI run before it starts.
+
 ## Getting started
 
 You need Node.js 24 or newer.
 
 ```bash
+git clone https://github.com/YOUR-USERNAME/3binfrastructure.git
+cd 3binfrastructure
 npm install
 npm run dev
 ```
