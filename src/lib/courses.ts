@@ -1,3 +1,5 @@
+import type { Sketch } from './sketch';
+
 export type Course = { name: string; by: string; url: string; about: string; cost: string };
 
 export type Step = { title: string; why: string; courses: Course[] };
@@ -136,6 +138,33 @@ export const courses: Step[] = [
 		]
 	},
 	{
+		title: 'Cloud and DevOps',
+		why: 'Real software has to be shipped and kept running. Pairs well with the DevOps, AWS and VPS notes on this site.',
+		courses: [
+			{
+				name: 'DevOps with Docker',
+				by: 'University of Helsinki',
+				url: 'https://devopswithdocker.com/',
+				about: 'Containers from first steps to building your own images, through exercises.',
+				cost: FREE
+			},
+			{
+				name: 'DevOps with Kubernetes',
+				by: 'University of Helsinki',
+				url: 'https://devopswithkubernetes.com/',
+				about: 'Run, scale and deploy applications on a real Kubernetes cluster.',
+				cost: FREE
+			},
+			{
+				name: 'AWS Skill Builder',
+				by: 'Amazon Web Services',
+				url: 'https://skillbuilder.aws/',
+				about: 'Official AWS training, with free options, from cloud basics to certifications.',
+				cost: 'Free and paid options'
+			}
+		]
+	},
+	{
 		title: 'Distributed systems and architecture',
 		why: 'Once you can build one service well, this is how to make many of them work together.',
 		courses: [
@@ -163,3 +192,50 @@ export const courses: Step[] = [
 		]
 	}
 ];
+
+export const path: Sketch = {
+	kind: 'Learning path',
+	alt: 'Seven steps in order: programming, algorithms, real software, how computers work, databases, cloud and DevOps, then distributed systems.',
+	h: 262,
+	nodes: [
+		{ id: 'a', label: '1. Program', x: 80, y: 40, w: 126, h: 52, fill: 'sky' },
+		{ id: 'b', label: '2. Algorithms', x: 240, y: 40, w: 126, h: 52, fill: 'sky' },
+		{ id: 'c', label: '3. Real\nsoftware', x: 400, y: 40, w: 126, h: 60, fill: 'yellow' },
+		{ id: 'd', label: '4. Computers', x: 400, y: 130, w: 126, h: 52, fill: 'yellow' },
+		{ id: 'e', label: '5. Databases', x: 240, y: 130, w: 126, h: 52, fill: 'mint' },
+		{ id: 'f', label: '6. Cloud +\nDevOps', x: 80, y: 130, w: 126, h: 60, fill: 'mint' },
+		{ id: 'g', label: '7. Distributed systems', x: 170, y: 222, w: 200, h: 52, fill: 'pink' },
+		{ id: 'h', label: 'Ready!', x: 400, y: 222, w: 126, h: 52, fill: 'yellow' }
+	],
+	edges: [
+		{ from: 'a', to: 'b' },
+		{ from: 'b', to: 'c' },
+		{ from: 'c', to: 'd' },
+		{ from: 'd', to: 'e' },
+		{ from: 'e', to: 'f' },
+		{ from: 'f', to: 'g' },
+		{ from: 'g', to: 'h' }
+	],
+	steps: [
+		{ say: 'Start by learning to break problems down and write code.', light: ['a'] },
+		{ say: 'Algorithms teach you what makes code fast or slow.', send: [['a', 'b']], light: ['b'] },
+		{
+			say: 'Then build software that other people can read and change.',
+			send: [['b', 'c']],
+			light: ['c']
+		},
+		{ say: 'Learn what really happens beneath your code.', send: [['c', 'd']], light: ['d'] },
+		{
+			say: 'Understand the part of every system that must not lose anything: the data.',
+			send: [['d', 'e']],
+			light: ['e']
+		},
+		{ say: 'Learn to ship your work and keep it running.', send: [['e', 'f']], light: ['f'] },
+		{ say: 'Finally, make many machines behave as one system.', send: [['f', 'g']], light: ['g'] },
+		{
+			say: 'There is no finish line, but now you can learn anything else you need.',
+			send: [['g', 'h']],
+			light: ['h']
+		}
+	]
+};
