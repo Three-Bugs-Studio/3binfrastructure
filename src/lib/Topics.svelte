@@ -1,12 +1,27 @@
 <script lang="ts">
-	import Sketch from '#lib/Sketch.svelte';
+	import Demo from '#lib/Demo.svelte';
 	import type { Topic } from '#lib/sketch.js';
 
-	let { title, intro, topics }: { title: string; intro: string; topics: Topic[] } = $props();
+	let {
+		title,
+		intro,
+		topics,
+		source
+	}: {
+		title: string;
+		intro: string;
+		topics: Topic[];
+		source?: { label: string; url: string };
+	} = $props();
 </script>
 
 <h1><span class="hl">{title}</span></h1>
-<p class="intro">{intro}</p>
+<p class="intro">
+	{intro}
+	{#if source}Based on <a href={source.url} rel="external noopener">{source.label}</a>, rewritten in
+		our own words.{/if}
+	Press play on any sketch to watch it happen.
+</p>
 
 <nav class="chips" aria-label="On this page">
 	{#each topics as topic (topic.id)}
@@ -15,8 +30,9 @@
 </nav>
 
 {#each topics as topic, i (topic.id)}
+	{#if topic.part}<h2 class="part"><span class="hl">{topic.part}</span></h2>{/if}
 	<article id={topic.id} class="doodle">
-		<h2><span class="num">{i + 1}</span> {topic.title}</h2>
+		<h3><span class="num">{i + 1}</span> {topic.title}</h3>
 		<div class="columns">
 			<div>
 				<p>{topic.summary}</p>
@@ -25,9 +41,10 @@
 						<li><strong>{term}:</strong> {text}</li>
 					{/each}
 				</ul>
+				{#if topic.code}<pre><code>{topic.code}</code></pre>{/if}
 			</div>
 			<div class="side">
-				{#if topic.sketch}<Sketch sketch={topic.sketch} />{/if}
+				<Demo sketch={topic.sketch} />
 				{#if topic.table}
 					<table>
 						<thead>
@@ -36,7 +53,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each topic.table.rows as [name, ...cells] (name)}
+							{#each topic.table.rows as [name, ...cells], r (r)}
 								<tr>
 									<th scope="row">{name}</th>
 									{#each cells as cell, c (c)}
@@ -47,22 +64,36 @@
 						</tbody>
 					</table>
 				{/if}
-				{#if topic.code}<pre><code>{topic.code}</code></pre>{/if}
 			</div>
 		</div>
+		{#if topic.skip}<p class="note warn"><strong>If you skip this:</strong> {topic.skip}</p>{/if}
 		<p class="note"><strong>Rule of thumb:</strong> {topic.tip}</p>
+		{#if topic.links}
+			<p class="links">
+				Read more:
+				{#each topic.links as [label, url], l (url)}
+					{#if l > 0}·{/if}
+					<a href={url} rel="external noopener">{label}</a>
+				{/each}
+			</p>
+		{/if}
 	</article>
 {/each}
 
 <style>
+	.part {
+		margin-block: 3.5rem -0.5rem;
+	}
+
 	article {
 		margin-block: 2.5rem;
 		padding: 1.5rem clamp(1rem, 4vw, 2.25rem) 1.75rem;
 		scroll-margin-top: 1rem;
 	}
 
-	h2 {
+	h3 {
 		margin: 0 0 0.5rem;
+		font-size: clamp(1.9rem, 4vw, 2.5rem);
 	}
 
 	.num {
@@ -80,9 +111,8 @@
 
 	.columns {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		gap: 2.5rem;
-		align-items: center;
 	}
 
 	.columns p {
@@ -95,9 +125,19 @@
 	}
 
 	.note {
-		margin: 1.5rem 0 0;
+		margin: 1.25rem 0 0;
 		width: fit-content;
 		max-width: 100%;
+	}
+
+	.warn {
+		background: var(--pink);
+		rotate: 0.4deg;
+	}
+
+	.links {
+		margin: 1rem 0 0;
+		font-size: 1.05rem;
 	}
 
 	ul {
@@ -112,6 +152,7 @@
 
 	table {
 		width: 100%;
+		margin-top: 1.25rem;
 		border-collapse: collapse;
 		font-size: 1rem;
 	}
@@ -134,7 +175,7 @@
 	pre {
 		margin: 1.25rem 0 0;
 		padding: 1rem 1.25rem;
-		border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+		border-radius: 14px 18px 12px 20px / 18px 12px 20px 14px;
 		background: var(--board);
 		color: var(--chalk);
 		font:
