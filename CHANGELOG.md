@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Three-Bugs-Studio/3binfrastructure/compare/v0.2.0...v0.3.0) (2026-10-31)
+
+
+### Features
+
+* **architecture:** add topics from layers to microservices ([#3](https://github.com/Three-Bugs-Studio/3binfrastructure/issues/3)) ([f8e95e4](https://github.com/Three-Bugs-Studio/3binfrastructure/commit/f8e95e4a7aa763171e6bce2011b84b2147083e00))
+
 ## [0.2.0](https://github.com/Three-Bugs-Studio/3binfrastructure/compare/v0.1.0...v0.2.0) (2026-10-31)
 
 
