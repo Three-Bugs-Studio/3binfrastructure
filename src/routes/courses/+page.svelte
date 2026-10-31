@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { courses } from '#lib/courses.js';
+	import Demo from '#lib/Demo.svelte';
+	import { courses, path } from '#lib/courses.js';
 </script>
 
 <svelte:head>
@@ -16,6 +17,8 @@
 	in order, or start wherever your gaps are. Courses run on other sites, so check each page for its
 	current dates and prices.
 </p>
+
+<div class="path"><Demo sketch={path} /></div>
 
 {#each courses as step, i (step.title)}
 	<section>
@@ -35,6 +38,11 @@
 {/each}
 
 <style>
+	.path {
+		max-width: 34rem;
+		margin-top: 1.5rem;
+	}
+
 	section {
 		margin-block: 3rem;
 	}
