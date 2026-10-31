@@ -3,6 +3,7 @@ import type { Topic } from './sketch';
 export const databases: Topic[] = [
 	{
 		id: 'relational',
+		part: 'Modelling data',
 		title: 'Tables, keys and relationships',
 		summary:
 			'A relational database stores data in tables of rows and columns. Keys connect the tables, so each fact lives in one place and queries join them back together.',
@@ -21,6 +22,26 @@ FROM customers c
 LEFT JOIN orders o ON o.customer_id = c.id
 GROUP BY c.id, c.name;`,
 		sketch: {
+			kind: 'Entity relationship diagram',
+			steps: [
+				{ say: 'Each customer lives in one row, in one table.', light: ['cust'] },
+				{
+					say: 'Every order stores the id of its customer in customer_id.',
+					send: [['ord', 'cust']],
+					light: ['ord']
+				},
+				{
+					say: 'A JOIN follows that key and brings both tables back together.',
+					send: [['cust', 'ord']],
+					light: ['cust', 'ord']
+				},
+				{
+					say: 'Try to save an order for customer 99, who does not exist. The foreign key rejects it.',
+					set: { ord: 'orders\ncustomer_id = 99\nrejected' },
+					down: ['ord'],
+					send: [['ord', 'cust']]
+				}
+			],
 			alt: 'The orders table has a customer_id foreign key pointing at the customers table. One customer has many orders.',
 			h: 170,
 			nodes: [
@@ -65,6 +86,32 @@ GROUP BY c.id, c.name;`,
 		],
 		tip: 'Every column should depend on the key, the whole key, and nothing but the key.',
 		sketch: {
+			kind: 'Schema diagram',
+			steps: [
+				{
+					say: 'One table repeats the customer on every single order.',
+					hide: ['cust', 'ord'],
+					light: ['before']
+				},
+				{
+					say: 'Changing one email means updating many rows. Miss one, and the data disagrees with itself.',
+					hide: ['cust', 'ord'],
+					set: { before: 'orders\nann@old.com, ann@new.com, ann@old.com' },
+					down: ['before']
+				},
+				{
+					say: 'Split the customer details into their own table.',
+					hide: ['ord'],
+					send: [['before', 'cust']],
+					light: ['cust']
+				},
+				{ say: 'Orders keep only a customer_id.', send: [['before', 'ord']], light: ['ord'] },
+				{
+					say: 'Each fact now lives in one row, so one update fixes it everywhere.',
+					hide: ['before'],
+					light: ['cust']
+				}
+			],
 			alt: 'A single orders table that repeats customer details gets split into a customers table and an orders table that references it.',
 			h: 215,
 			nodes: [
@@ -104,6 +151,7 @@ GROUP BY c.id, c.name;`,
 	},
 	{
 		id: 'transactions',
+		part: 'Keeping data correct',
 		title: 'Transactions and ACID',
 		summary:
 			'A transaction groups several steps into one unit that either fully happens or never happened. Moving money is the classic example: the debit and the credit must succeed together.',
@@ -125,6 +173,43 @@ UPDATE accounts SET balance = balance - 100 WHERE id = 1;
 UPDATE accounts SET balance = balance + 100 WHERE id = 2;
 COMMIT;`,
 		sketch: {
+			kind: 'Flowchart',
+			steps: [
+				{
+					say: 'BEGIN opens the transaction. Nothing is final yet.',
+					hide: ['roll'],
+					light: ['begin']
+				},
+				{
+					say: 'Take 100 from account 1.',
+					hide: ['roll'],
+					send: [['begin', 'debit']],
+					light: ['debit']
+				},
+				{
+					say: 'Add 100 to account 2.',
+					hide: ['roll'],
+					send: [['debit', 'credit']],
+					light: ['credit']
+				},
+				{
+					say: 'Both steps worked, so COMMIT makes them permanent together.',
+					hide: ['roll'],
+					send: [['credit', 'commit']],
+					light: ['commit']
+				},
+				{
+					say: 'Now replay it, but the credit fails halfway through.',
+					send: [['debit', 'credit']],
+					down: ['credit', 'commit']
+				},
+				{
+					say: 'ROLLBACK undoes the debit, as if nothing had happened. No money vanishes.',
+					send: [['credit', 'roll']],
+					down: ['credit', 'commit'],
+					light: ['roll']
+				}
+			],
 			alt: 'A transaction runs begin, debit account one, credit account two, commit. An error in either step leads to rollback.',
 			h: 175,
 			nodes: [
@@ -158,6 +243,59 @@ COMMIT;`,
 			]
 		],
 		tip: "Check your database's default level and what it actually guarantees. Do not assume the textbook table.",
+		sketch: {
+			kind: 'Sequence diagram',
+			alt: 'Transaction 1 reads a row as 100. Transaction 2 changes it to 200 and commits. Transaction 1 reads again and sees 200.',
+			h: 215,
+			nodes: [
+				{ id: 't1', label: 'Transaction 1', x: 85, y: 24, w: 130, shape: 'lifeline', fill: 'sky' },
+				{ id: 'row', label: 'Row', x: 245, y: 24, w: 100, shape: 'lifeline', fill: 'yellow' },
+				{
+					id: 't2',
+					label: 'Transaction 2',
+					x: 395,
+					y: 24,
+					w: 130,
+					shape: 'lifeline',
+					fill: 'mint'
+				},
+				{ id: 'a1', label: '', x: 85, y: 80, shape: 'dot' },
+				{ id: 'b1', label: '', x: 245, y: 80, shape: 'dot' },
+				{ id: 'c2', label: '', x: 395, y: 125, shape: 'dot' },
+				{ id: 'b2', label: '', x: 245, y: 125, shape: 'dot' },
+				{ id: 'a3', label: '', x: 85, y: 175, shape: 'dot' },
+				{ id: 'b3', label: '', x: 245, y: 175, shape: 'dot' }
+			],
+			edges: [
+				{ from: 'a1', to: 'b1', label: 'read: 100' },
+				{ from: 'c2', to: 'b2', label: 'write: 200' },
+				{ from: 'a3', to: 'b3', label: 'read: 200' }
+			],
+			steps: [
+				{
+					say: 'Transaction 1 reads the row and sees 100.',
+					hide: ['c2', 'b2', 'a3', 'b3'],
+					send: [['a1', 'b1']],
+					light: ['t1']
+				},
+				{
+					say: 'Transaction 2 changes it to 200 and commits.',
+					hide: ['a3', 'b3'],
+					send: [['c2', 'b2']],
+					light: ['t2']
+				},
+				{
+					say: 'Transaction 1 reads the same row again and gets 200. That is a non-repeatable read.',
+					send: [['a3', 'b3']],
+					light: ['t1']
+				},
+				{
+					say: 'At repeatable read, Transaction 1 would keep seeing 100 until it finishes.',
+					set: { t1: 'still sees 100' },
+					light: ['t1']
+				}
+			]
+		},
 		table: {
 			head: ['Level', 'Dirty', 'Non-repeatable', 'Phantom'],
 			rows: [
@@ -170,6 +308,7 @@ COMMIT;`,
 	},
 	{
 		id: 'indexes',
+		part: 'Speed and scale',
 		title: 'Indexes',
 		summary:
 			'An index is a sorted lookup structure, like the index at the back of a book. Without one the database scans every row. With one it jumps to the right place.',
@@ -185,6 +324,28 @@ COMMIT;`,
 		tip: 'Run EXPLAIN on a slow query before adding an index, and again afterwards to prove it gets used.',
 		code: `CREATE INDEX idx_orders_customer ON orders (customer_id);`,
 		sketch: {
+			kind: 'Tree diagram',
+			steps: [
+				{
+					say: 'Find 40. With no index, the database would have to read every row.',
+					light: ['root']
+				},
+				{
+					say: 'The root says 40 sits between 30 and 60, so skip everything else.',
+					send: [['root', 'b']],
+					light: ['b']
+				},
+				{
+					say: 'Found in two hops. A real tree finds one row in millions in just a few.',
+					light: ['b'],
+					set: { b: '[40]  |  50' }
+				},
+				{
+					say: 'The catch: inserting 45 means this tree must be updated too, which slows down writes.',
+					set: { b: '40 | 45 | 50' },
+					light: ['b']
+				}
+			],
 			alt: 'A B-tree: the root holds 30 and 60, with child nodes for values below 30, between 30 and 60, and above 60.',
 			h: 175,
 			nodes: [
@@ -219,6 +380,30 @@ COMMIT;`,
 		],
 		tip: 'Replication protects you from a dead server, not from a bad DELETE. You still need backups.',
 		sketch: {
+			kind: 'Deployment diagram',
+			steps: [
+				{ say: 'The app sends every write to the primary.', send: [['app', 'p']], light: ['p'] },
+				{
+					say: 'The primary copies the change to each replica.',
+					send: [
+						['p', 'r1'],
+						['p', 'r2']
+					]
+				},
+				{
+					say: 'Reads go to a replica, which takes load off the primary.',
+					send: [['app', 'r2']],
+					light: ['r2']
+				},
+				{ say: 'The primary dies.', down: ['p'] },
+				{
+					say: 'Replica 1 is promoted and starts taking writes, so the system keeps working.',
+					down: ['p'],
+					set: { r1: 'New\nprimary' },
+					send: [['app', 'r1']],
+					light: ['r1']
+				}
+			],
 			alt: 'The app writes to the primary database. The primary copies changes to two replicas, and the app reads from a replica.',
 			h: 225,
 			nodes: [
@@ -251,6 +436,35 @@ COMMIT;`,
 		],
 		tip: 'Sharding is a last resort. Try indexes, caching, read replicas and a bigger machine first.',
 		sketch: {
+			kind: 'Data flow diagram',
+			steps: [
+				{
+					say: 'Alice starts with A, so the router sends her row to shard 1.',
+					set: { r: 'Router\n"Alice"' },
+					send: [['r', 'a']],
+					light: ['a']
+				},
+				{
+					say: 'Maya goes to shard 2.',
+					set: { r: 'Router\n"Maya"' },
+					send: [['r', 'b']],
+					light: ['b']
+				},
+				{
+					say: 'Zoe goes to shard 3.',
+					set: { r: 'Router\n"Zoe"' },
+					send: [['r', 'c']],
+					light: ['c']
+				},
+				{
+					say: 'Each server now holds a third of the data and a third of the load.',
+					send: [
+						['r', 'a'],
+						['r', 'b'],
+						['r', 'c']
+					]
+				}
+			],
 			alt: 'A router sends each query to one of three shards: names A to H, I to P, or Q to Z.',
 			h: 225,
 			nodes: [
@@ -310,17 +524,44 @@ COMMIT;`,
 		],
 		tip: 'You do not really pick two of three. Partitions are not optional, so the choice is C or A when one happens.',
 		sketch: {
-			alt: 'A triangle with consistency, availability and partition tolerance at its corners. CP and AP are the two real choices.',
+			kind: 'Failure scenario',
+			alt: 'Two database nodes replicate to each other. When the network between them breaks, node B must either refuse a read or return old data.',
 			h: 215,
 			nodes: [
-				{ id: 'c', label: 'Consistency', x: 240, y: 32, w: 130, h: 46, fill: 'sky' },
-				{ id: 'a', label: 'Availability', x: 85, y: 180, w: 130, h: 46, fill: 'mint' },
-				{ id: 'p', label: 'Partition\ntolerance', x: 395, y: 180, w: 130, h: 58, fill: 'yellow' }
+				{ id: 'n1', label: 'Node A\nx = 1', x: 110, y: 50, w: 130, h: 66, fill: 'sky' },
+				{ id: 'n2', label: 'Node B\nx = 1', x: 370, y: 50, w: 130, h: 66, fill: 'mint' },
+				{ id: 'c1', label: 'Writer', x: 110, y: 170, w: 110, h: 50, fill: 'yellow' },
+				{ id: 'c2', label: 'Reader', x: 370, y: 170, w: 110, h: 50, fill: 'yellow' }
 			],
 			edges: [
-				{ from: 'c', to: 'p', label: 'CP', plain: true },
-				{ from: 'p', to: 'a', label: 'AP', plain: true },
-				{ from: 'a', to: 'c', dashed: true, plain: true }
+				{ from: 'n1', to: 'n2', label: 'replication', dashed: true },
+				{ from: 'c1', to: 'n1' },
+				{ from: 'c2', to: 'n2' }
+			],
+			steps: [
+				{ say: 'A write reaches node A.', send: [['c1', 'n1']], set: { n1: 'Node A\nx = 2' } },
+				{
+					say: 'Normally it is copied across, so both nodes agree.',
+					send: [['n1', 'n2']],
+					set: { n1: 'Node A\nx = 2', n2: 'Node B\nx = 2' }
+				},
+				{
+					say: 'The network between them breaks, and another write lands on A only.',
+					send: [['c1', 'n1']],
+					set: { n1: 'Node A\nx = 3', n2: 'Node B\nx = 2\ncut off' }
+				},
+				{
+					say: 'CP choice: B refuses to answer rather than risk being wrong.',
+					send: [['c2', 'n2']],
+					set: { n1: 'Node A\nx = 3', n2: 'Node B\nrefused' },
+					down: ['n2']
+				},
+				{
+					say: 'AP choice: B answers with old data, and catches up after the network heals.',
+					send: [['c2', 'n2']],
+					set: { n1: 'Node A\nx = 3', n2: 'Node B\nx = 2 (old)' },
+					light: ['n2']
+				}
 			]
 		}
 	},
@@ -337,39 +578,44 @@ COMMIT;`,
 		],
 		tip: 'Default to a relational database such as PostgreSQL. Reach for NoSQL when you can name the limit you are hitting.',
 		sketch: {
-			alt: 'Four NoSQL families: key-value, document, wide-column and graph.',
+			kind: 'Comparison',
+			alt: 'An app chooses between four NoSQL families: key-value, document, wide-column and graph.',
 			h: 200,
 			nodes: [
-				{ id: 'kv', label: 'Key-value\nkey: value', x: 125, y: 50, w: 200, h: 76, fill: 'yellow' },
-				{
-					id: 'doc',
-					label: 'Document\n{ "nested": "json" }',
-					x: 355,
-					y: 50,
-					w: 200,
-					h: 76,
-					fill: 'sky'
-				},
-				{
-					id: 'wide',
-					label: 'Wide-column\nrow key, many columns',
-					x: 125,
-					y: 150,
-					w: 200,
-					h: 76,
-					fill: 'mint'
-				},
-				{
-					id: 'graph',
-					label: 'Graph\nnodes and edges',
-					x: 355,
-					y: 150,
-					w: 200,
-					h: 76,
-					fill: 'pink'
-				}
+				{ id: 'app', label: 'Your app', x: 240, y: 30, w: 130, h: 46, fill: 'sky' },
+				{ id: 'kv', label: 'Key-value\nsession:42', x: 60, y: 150, w: 108, h: 76, fill: 'yellow' },
+				{ id: 'doc', label: 'Document\n{ json }', x: 180, y: 150, w: 108, h: 76, fill: 'sky' },
+				{ id: 'wide', label: 'Wide-\ncolumn', x: 300, y: 150, w: 108, h: 76, fill: 'mint' },
+				{ id: 'graph', label: 'Graph\na -> b', x: 420, y: 150, w: 108, h: 76, fill: 'pink' }
 			],
-			edges: []
+			edges: [
+				{ from: 'app', to: 'kv', plain: true },
+				{ from: 'app', to: 'doc', plain: true },
+				{ from: 'app', to: 'wide', plain: true },
+				{ from: 'app', to: 'graph', plain: true }
+			],
+			steps: [
+				{
+					say: 'Need one thing by key, very fast? Use key-value, such as a login session in Redis.',
+					send: [['app', 'kv']],
+					light: ['kv']
+				},
+				{
+					say: 'Records of varying shape? Use a document store, such as product pages in MongoDB.',
+					send: [['app', 'doc']],
+					light: ['doc']
+				},
+				{
+					say: 'Enormous write volumes? Use wide-column, such as sensor data in Cassandra.',
+					send: [['app', 'wide']],
+					light: ['wide']
+				},
+				{
+					say: 'Is the data all about connections? Use a graph, such as friends of friends in Neo4j.',
+					send: [['app', 'graph']],
+					light: ['graph']
+				}
+			]
 		}
 	}
 ];
