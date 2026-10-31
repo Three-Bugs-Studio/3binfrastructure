@@ -1,0 +1,168 @@
+<script lang="ts">
+	import { resolve } from '$app/paths';
+	import Sketch from '#lib/Sketch.svelte';
+	import { architecture } from '#lib/architecture.js';
+	import { courses } from '#lib/courses.js';
+	import { databases } from '#lib/databases.js';
+	import type { Sketch as SketchData } from '#lib/sketch.js';
+
+	const hero: SketchData = {
+		alt: 'A small system: a user reaches a load balancer that shares requests between two app servers, which use a cache and a database.',
+		h: 250,
+		nodes: [
+			{ id: 'user', label: 'You', x: 35, y: 105, shape: 'person' },
+			{ id: 'lb', label: 'Load\nbalancer', x: 160, y: 125, w: 100, h: 64, fill: 'yellow' },
+			{ id: 'a', label: 'App', x: 300, y: 55, w: 80, fill: 'sky' },
+			{ id: 'b', label: 'App', x: 300, y: 195, w: 80, fill: 'sky' },
+			{ id: 'cache', label: 'Cache', x: 430, y: 55, w: 88, fill: 'pink' },
+			{ id: 'db', label: 'Database', x: 425, y: 195, w: 96, h: 74, shape: 'db', fill: 'mint' }
+		],
+		edges: [
+			{ from: 'user', to: 'lb' },
+			{ from: 'lb', to: 'a' },
+			{ from: 'lb', to: 'b' },
+			{ from: 'a', to: 'cache' },
+			{ from: 'a', to: 'db' },
+			{ from: 'b', to: 'db' }
+		]
+	};
+
+	const sections = [
+		{
+			href: resolve('/architecture'),
+			title: 'System Architecture',
+			text: 'Layers, microservices, scaling, caching, queues and designing for failure.',
+			count: `${architecture.length} topics`,
+			color: 'var(--yellow)',
+			tilt: '-1.5deg'
+		},
+		{
+			href: resolve('/databases'),
+			title: 'Database Concepts',
+			text: 'Keys, normalization, ACID, indexes, replication, sharding, CAP and NoSQL.',
+			count: `${databases.length} topics`,
+			color: 'var(--sky)',
+			tilt: '1deg'
+		},
+		{
+			href: resolve('/courses'),
+			title: 'Courses',
+			text: 'A hand-picked path from your first program to distributed systems.',
+			count: `${courses.length} steps`,
+			color: 'var(--pink)',
+			tilt: '-0.75deg'
+		}
+	];
+</script>
+
+<svelte:head>
+	<title>3B Infrastructure | Hand-drawn notes on building software</title>
+	<meta
+		name="description"
+		content="Learn system architecture, database concepts and software engineering courses through simple hand-drawn notes."
+	/>
+</svelte:head>
+
+<section class="hero">
+	<div>
+		<h1>How software really works, <span class="hl">drawn by hand.</span></h1>
+		<p class="intro">
+			A notebook of plain-English explanations and scribbled diagrams on system architecture,
+			databases, and the courses worth taking. Pick a page and start reading.
+		</p>
+	</div>
+	<Sketch sketch={hero} />
+</section>
+
+<ul class="cards">
+	{#each sections as section (section.href)}
+		<li style:--note={section.color} style:--tilt={section.tilt}>
+			<h2><a href={section.href}>{section.title}</a></h2>
+			<p>{section.text}</p>
+			<p class="count">{section.count}</p>
+		</li>
+	{/each}
+</ul>
+
+<style>
+	.hero {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2.5rem;
+		align-items: center;
+		margin-block: 1rem 3.5rem;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
+		gap: 2.25rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	li {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		padding: 1.75rem 1.5rem 1.25rem;
+		background: var(--note);
+		box-shadow: 2px 5px 9px rgb(0 0 0 / 0.18);
+		rotate: var(--tilt);
+	}
+
+	/* strip of tape holding the note to the page */
+	li::before {
+		content: '';
+		position: absolute;
+		top: -0.75rem;
+		left: calc(50% - 3rem);
+		width: 6rem;
+		height: 1.5rem;
+		background: rgb(255 255 255 / 0.65);
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+		rotate: -3deg;
+	}
+
+	h2 {
+		margin: 0 0 0.5rem;
+	}
+
+	a {
+		color: var(--ink);
+	}
+
+	/* the whole note is the link target */
+	a::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+	}
+
+	p {
+		margin: 0;
+	}
+
+	.count {
+		margin-top: auto;
+		padding-top: 0.75rem;
+		color: var(--ink-soft);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		li {
+			transition: rotate 0.15s;
+		}
+
+		li:hover {
+			rotate: 0deg;
+		}
+	}
+
+	@media (max-width: 52rem) {
+		.hero {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>
