@@ -1,0 +1,26 @@
+name: Content change
+description: Correct an explanation, or suggest a new topic or course
+labels: [content]
+body:
+  - type: dropdown
+    id: section
+    attributes:
+      label: Section
+      options:
+        - System Architecture
+        - Database Concepts
+        - Courses
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: What should change?
+      description: The correction or the new topic, and why it helps readers.
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: A link that backs this up, if you have one.
