@@ -4,6 +4,7 @@ const START = 'Start with the foundations';
 const TRAFFIC = 'Handling more traffic';
 const COMPUTE = 'Running your code';
 const DATA = 'Scaling the data layer';
+const SECURE = 'Locking it down';
 const FAILURE = 'Surviving failure';
 
 export const aws: Topic[] = [
@@ -847,6 +848,199 @@ export const aws: Topic[] = [
 		}
 	},
 	{
+		id: 'iam',
+		part: SECURE,
+		title: 'IAM and least privilege',
+		summary:
+			'IAM decides who may do what to which AWS resource. Everything is denied until a policy allows it, so the job is to allow as little as you can. Apps should get short-lived credentials from a role, never long-lived keys.',
+		points: [
+			[
+				'Policy',
+				'a JSON document listing allowed actions on specific resources, with optional conditions.'
+			],
+			['Role', 'an identity that a person or a service takes on to get temporary credentials.'],
+			[
+				'Least privilege',
+				'grant only the actions and resources a task needs, then trim further as you learn.'
+			],
+			['Explicit deny', 'a deny in any policy beats every allow.'],
+			['Root user', 'keep it for the few tasks that need it, and protect it with MFA.']
+		],
+		tip: 'Give EC2 instances and Lambda functions a role. Access keys in code end up in Git sooner or later.',
+		code: `{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:GetObject", "s3:PutObject"],
+    "Resource": "arn:aws:s3:::shop-uploads/*"
+  }]
+}`,
+		links: [
+			[
+				'IAM best practices',
+				'https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html'
+			],
+			['IAM roles', 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html'],
+			[
+				'Policies and permissions',
+				'https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html'
+			]
+		],
+		sketch: {
+			kind: 'Access diagram',
+			alt: 'An app with a role may write to one S3 bucket. IAM denies everything else, so stolen credentials reach only that bucket and soon expire.',
+			h: 205,
+			nodes: [
+				{ id: 'app', label: 'App on EC2\nwith a role', x: 80, y: 55, w: 140, h: 62, fill: 'sky' },
+				{ id: 'atk', label: 'Stolen\ncredentials', x: 80, y: 155, w: 140, h: 62, fill: 'pink' },
+				{ id: 'iam', label: 'IAM\npolicy check', x: 240, y: 105, w: 120, h: 66, fill: 'yellow' },
+				{ id: 's3', label: 'S3 bucket\nshop-uploads', x: 400, y: 55, w: 140, h: 62, fill: 'mint' },
+				{ id: 'db', label: 'DynamoDB\nusers table', x: 400, y: 155, w: 140, h: 62, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'app', to: 'iam' },
+				{ from: 'atk', to: 'iam', dashed: true },
+				{ from: 'iam', to: 's3' },
+				{ from: 'iam', to: 'db' }
+			],
+			steps: [
+				{
+					say: 'The app runs with a role. AWS hands it short-lived credentials, so no keys sit in the code.',
+					hide: ['atk'],
+					light: ['app']
+				},
+				{
+					say: 'It saves an upload. IAM checks the policy: PutObject on this one bucket is allowed.',
+					hide: ['atk'],
+					send: [
+						['app', 'iam'],
+						['iam', 's3']
+					],
+					set: { iam: 'IAM\nallowed' },
+					light: ['s3']
+				},
+				{
+					say: 'A bug tries to delete the users table. No policy allows it, so the default deny wins.',
+					hide: ['atk'],
+					send: [['app', 'iam']],
+					set: { iam: 'IAM\ndenied' },
+					light: ['iam']
+				},
+				{
+					say: 'An attacker steals the credentials through a flaw in the app.',
+					send: [['atk', 'iam']],
+					light: ['atk']
+				},
+				{
+					say: 'They get only what the role allows: one bucket. The rest of the account is out of reach.',
+					send: [
+						['atk', 'iam'],
+						['iam', 's3']
+					],
+					set: { db: 'DynamoDB\nout of reach' },
+					light: ['s3']
+				},
+				{
+					say: 'Role credentials expire within hours, so the stolen copy soon stops working.',
+					set: { atk: 'Stolen\nexpired' },
+					down: ['atk']
+				}
+			]
+		}
+	},
+	{
+		id: 'vpc',
+		title: 'VPC: subnets and security groups',
+		summary:
+			'A VPC is your own private network inside AWS. You split it into subnets, each in one Availability Zone, and security groups act as a firewall around every resource. The usual shape keeps only the load balancer public and everything else private.',
+		points: [
+			['Public subnet', 'its route table points at an internet gateway. Load balancers go here.'],
+			['Private subnet', 'no direct route from the internet. App servers and databases live here.'],
+			['NAT gateway', 'lets private servers reach out for updates, while nothing can reach in.'],
+			[
+				'Security group',
+				'allow-only rules on each resource. They are stateful, so replies get back in by themselves.'
+			],
+			[
+				'Group references',
+				'allow the database port from the app security group, not from a range of IPs.'
+			]
+		],
+		tip: 'Never open SSH or a database port to 0.0.0.0/0. Reach servers through Session Manager instead.',
+		links: [
+			[
+				'How Amazon VPC works',
+				'https://docs.aws.amazon.com/vpc/latest/userguide/how-it-works.html'
+			],
+			['Subnets', 'https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html'],
+			[
+				'Security groups',
+				'https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html'
+			]
+		],
+		sketch: {
+			kind: 'Network diagram',
+			alt: 'Users reach a load balancer in a public subnet. The app and database sit in a private subnet, and security groups let each layer talk only to the next.',
+			h: 245,
+			nodes: [
+				{ id: 'vpc', label: 'VPC', x: 270, y: 122, w: 410, h: 236, shape: 'boundary' },
+				{ id: 'pub', label: 'Public subnet', x: 270, y: 50, w: 390, h: 76, shape: 'boundary' },
+				{ id: 'priv', label: 'Private subnet', x: 270, y: 170, w: 390, h: 128, shape: 'boundary' },
+				{ id: 'user', label: 'Users', x: 25, y: 60, shape: 'person' },
+				{ id: 'atk', label: 'Attacker', x: 25, y: 196, shape: 'person' },
+				{ id: 'lb', label: 'Load\nbalancer', x: 270, y: 56, w: 110, h: 50, fill: 'yellow' },
+				{ id: 'app', label: 'App\nsg-app', x: 170, y: 178, w: 110, h: 58, fill: 'sky' },
+				{
+					id: 'db',
+					label: 'Database\nsg-db',
+					x: 370,
+					y: 178,
+					w: 120,
+					h: 70,
+					shape: 'db',
+					fill: 'mint'
+				}
+			],
+			edges: [
+				{ from: 'user', to: 'lb' },
+				{ from: 'lb', to: 'app' },
+				{ from: 'app', to: 'db', label: '5432' },
+				{ from: 'atk', to: 'db', dashed: true }
+			],
+			steps: [
+				{
+					say: 'Only the load balancer sits in a public subnet, with a route to the internet.',
+					send: [['user', 'lb']],
+					light: ['lb']
+				},
+				{
+					say: 'Its security group allows HTTPS from anyone. The app group allows traffic only from the load balancer.',
+					send: [['lb', 'app']],
+					light: ['app']
+				},
+				{
+					say: 'The database group allows port 5432 only from sg-app, so the app connects as normal.',
+					send: [['app', 'db']],
+					light: ['db']
+				},
+				{
+					say: 'An attacker tries the database directly. It is in a private subnet, with no route in.',
+					send: [['atk', 'db']],
+					down: ['atk']
+				},
+				{
+					say: 'Security groups are stateful, so the answers flow back out without any extra rules.',
+					send: [
+						['db', 'app'],
+						['app', 'lb'],
+						['lb', 'user']
+					],
+					light: ['user']
+				}
+			]
+		}
+	},
+	{
 		id: 'reliability',
 		part: FAILURE,
 		title: 'Designing for failure',
@@ -944,6 +1138,7 @@ export const aws: Topic[] = [
 			['Stage 4', 'read replicas for the database and SQS for slow background work.']
 		],
 		tip: 'Measure first, then fix the one bottleneck you can prove. The rest can wait.',
+		links: [['AWS Architecture Center', 'https://aws.amazon.com/architecture/']],
 		sketch: {
 			kind: 'Deployment diagram',
 			alt: 'Users reach CloudFront, then a load balancer, then an Auto Scaling group, which uses ElastiCache, RDS with a read replica, and an SQS queue with workers.',

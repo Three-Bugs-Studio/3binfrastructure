@@ -29,6 +29,7 @@ export const architecture: Topic[] = [
 			]
 		],
 		tip: 'If three people would draw your system three different ways, the architecture has already drifted.',
+		links: [['Software architecture guide', 'https://martinfowler.com/architecture/']],
 		sketch: {
 			kind: 'Zoom levels',
 			alt: 'System architecture contains servers, outside systems and software. Software architecture contains the layers. System design covers how one part works inside.',
@@ -123,6 +124,12 @@ export const architecture: Topic[] = [
 			]
 		],
 		tip: 'Integration bugs gather at the seams, so spend your design time on the contracts between parts.',
+		links: [
+			[
+				'Azure architecture fundamentals',
+				'https://learn.microsoft.com/en-us/azure/architecture/guide/'
+			]
+		],
 		sketch: {
 			kind: 'Block diagram',
 			alt: 'A request enters through interfaces, runs in software, reads data, and all of it runs on hardware and infrastructure.',
@@ -195,6 +202,14 @@ export const architecture: Topic[] = [
 			]
 		],
 		tip: 'Use REST unless you can name the problem it does not solve for you.',
+		links: [
+			[
+				'Web API design',
+				'https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design'
+			],
+			['Introduction to gRPC', 'https://grpc.io/docs/what-is-grpc/introduction/'],
+			['Learn GraphQL', 'https://graphql.org/learn/']
+		],
 		sketch: {
 			kind: 'C4 Container diagram',
 			alt: 'Web and mobile clients call an API gateway over REST. The gateway calls the users and orders services over gRPC.',
@@ -256,6 +271,10 @@ export const architecture: Topic[] = [
 			['The cost', 'one bad deploy or crash takes everything down together.']
 		],
 		tip: 'Ask what gets you through the next 12 months without a rewrite, not what you would need at 100 times today.',
+		links: [
+			['Monolithic architecture', 'https://microservices.io/patterns/monolithic.html'],
+			['Monolith first', 'https://martinfowler.com/bliki/MonolithFirst.html']
+		],
 		sketch: {
 			kind: 'C4 Container diagram',
 			alt: 'A user reaches one deployable application containing UI, orders and payments, backed by one database.',
@@ -310,6 +329,12 @@ export const architecture: Topic[] = [
 			['The cost', 'the central server can become the bottleneck.']
 		],
 		tip: 'Keep the server stateless and it becomes easy to run more than one of them.',
+		links: [
+			[
+				'Client-server overview (MDN)',
+				'https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/First_steps/Client-Server_overview'
+			]
+		],
 		sketch: {
 			kind: 'Sequence diagram',
 			alt: 'A browser sends a request to the server, the server queries the database, rows come back, and the server responds to the browser.',
@@ -368,6 +393,10 @@ export const architecture: Topic[] = [
 			]
 		],
 		tip: 'Split out a service when a team or a scaling need demands it, not because it feels modern.',
+		links: [
+			['Microservices (Fowler and Lewis)', 'https://martinfowler.com/articles/microservices.html'],
+			['Microservice architecture', 'https://microservices.io/patterns/microservices.html']
+		],
 		sketch: {
 			kind: 'C4 Container diagram',
 			alt: 'An API gateway calls an orders service and a payments service. Each has its own database, and orders calls payments over the network.',
@@ -427,6 +456,16 @@ export const architecture: Topic[] = [
 			['The cost', 'tracing why something happened takes real tooling.']
 		],
 		tip: 'Name events as past-tense facts, like OrderPlaced, so they stay true whoever listens.',
+		links: [
+			[
+				'What do you mean by event-driven?',
+				'https://martinfowler.com/articles/201701-event-driven.html'
+			],
+			[
+				'Event-driven style',
+				'https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/event-driven'
+			]
+		],
 		sketch: {
 			kind: 'Data flow diagram',
 			alt: 'Checkout publishes an order placed event to an event bus. Billing, shipping and analytics each receive it.',
@@ -481,6 +520,10 @@ export const architecture: Topic[] = [
 			['The cost', 'cold starts, tighter ties to one vendor, and a poor fit for long-running work.']
 		],
 		tip: 'Serverless shines when traffic is uneven. For steady, heavy load, a plain server is often cheaper.',
+		links: [
+			['Serverless architectures', 'https://martinfowler.com/articles/serverless.html'],
+			['AWS Lambda', 'https://docs.aws.amazon.com/lambda/latest/dg/welcome.html']
+		],
 		sketch: {
 			kind: 'Data flow diagram',
 			alt: 'Events trigger a function that writes to storage. The number of running copies goes from zero to many and back to zero.',
@@ -528,6 +571,16 @@ export const architecture: Topic[] = [
 			['The cost', 'a change that crosses layers, like a new field, ripples through all of them.']
 		],
 		tip: 'Each layer calls only the layer below it. If your UI code knows table names, the layers have leaked.',
+		links: [
+			[
+				'Presentation, domain, data',
+				'https://martinfowler.com/bliki/PresentationDomainDataLayering.html'
+			],
+			[
+				'N-tier style',
+				'https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/n-tier'
+			]
+		],
 		sketch: {
 			kind: 'Layer diagram',
 			alt: 'A user talks to the presentation layer, which calls business logic, which calls data access, which reads the database.',
@@ -579,6 +632,9 @@ export const architecture: Topic[] = [
 			['The cost', 'more upfront structure than a simple app needs.']
 		],
 		tip: 'If your core imports a database library, it is not really the core.',
+		links: [
+			['Hexagonal architecture (Cockburn)', 'https://alistair.cockburn.us/hexagonal-architecture']
+		],
 		sketch: {
 			kind: 'Ports and adapters diagram',
 			alt: 'Business logic sits in the centre. Web and test adapters drive it from the left, and database and email adapters plug in on the right.',
@@ -649,6 +705,13 @@ export const architecture: Topic[] = [
 				['Hexagonal', 'Long-lived logic', 'Upfront effort']
 			]
 		},
+		links: [
+			[
+				'Architecture styles',
+				'https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/'
+			],
+			['Monolith first', 'https://martinfowler.com/bliki/MonolithFirst.html']
+		],
 		sketch: {
 			kind: 'Decision flowchart',
 			alt: 'If you are a small team with one domain, use a modular monolith. Otherwise, if the work is spiky or event based, use serverless or events. Otherwise use microservices.',
@@ -713,6 +776,13 @@ export const architecture: Topic[] = [
 			['Failure', 'plan for it with circuit breakers, retries, spare capacity and good monitoring.']
 		],
 		tip: 'Write the constraints down before anyone draws a box.',
+		links: [
+			['Architecture decision records', 'https://adr.github.io/'],
+			[
+				'AWS Well-Architected',
+				'https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html'
+			]
+		],
 		sketch: {
 			kind: 'Process diagram',
 			alt: 'A loop of four steps: requirements, pattern, dependencies, resilience, then back to requirements.',
@@ -767,6 +837,13 @@ export const architecture: Topic[] = [
 			]
 		],
 		tip: 'Avoid the big rewrite. Replace one slice, prove it, then take the next.',
+		links: [
+			['Strangler fig', 'https://martinfowler.com/bliki/StranglerFigApplication.html'],
+			[
+				'Strangler fig pattern',
+				'https://learn.microsoft.com/en-us/azure/architecture/patterns/strangler-fig'
+			]
+		],
 		sketch: {
 			kind: 'C4 Container diagram',
 			alt: 'A new front end calls an integration layer, which routes to the legacy billing system, and later to a new service that replaces it.',
@@ -825,6 +902,10 @@ export const architecture: Topic[] = [
 			['Lost visibility', 'diagrams go stale within weeks, and soon nobody knows the whole system.']
 		],
 		tip: 'Keep diagrams next to the code, in version control, so they change with it.',
+		links: [
+			['Technical debt', 'https://martinfowler.com/bliki/TechnicalDebt.html'],
+			['Yagni', 'https://martinfowler.com/bliki/Yagni.html']
+		],
 		sketch: {
 			kind: 'Cycle diagram',
 			alt: 'A shortcut creates hidden coupling, which makes changes slow, which leaves the diagrams stale, which leads to more shortcuts.',
@@ -888,6 +969,12 @@ export const architecture: Topic[] = [
 			]
 		],
 		tip: 'Controllers should call services, never repositories. Otherwise the layers exist in name only.',
+		links: [
+			[
+				'Deconstructing the monolith (Shopify)',
+				'https://shopify.engineering/deconstructing-monolith-designing-software-maximizes-developer-productivity'
+			]
+		],
 		sketch: {
 			kind: 'Component diagram',
 			alt: 'The Order module calls the Product module through its external interface. A direct call to the Product repository is blocked.',
@@ -951,6 +1038,10 @@ export const architecture: Topic[] = [
 			['Different views', 'a dropdown and a profile page can use different DTOs from one Model.']
 		],
 		tip: 'Never return a Model from a Controller. Decide field by field what leaves the module.',
+		links: [
+			['Data Transfer Object', 'https://martinfowler.com/eaaCatalog/dataTransferObject.html'],
+			['Local DTO', 'https://martinfowler.com/bliki/LocalDTO.html']
+		],
 		sketch: {
 			kind: 'Data flow diagram',
 			alt: 'A user model holds name, avatar, email and card number. The DTO passes on only the name and avatar, so the client never sees the rest.',
@@ -1022,6 +1113,10 @@ export const architecture: Topic[] = [
 			]
 		],
 		tip: 'If a service URL contains an IP address or localhost, discovery is not really being used.',
+		links: [
+			['API gateway pattern', 'https://microservices.io/patterns/apigateway.html'],
+			['Server-side discovery', 'https://microservices.io/patterns/server-side-discovery.html']
+		],
 		sketch: {
 			kind: 'C4 Container diagram',
 			alt: 'A gateway asks Service Discovery where the order service is. After a restart the service registers a new address and traffic keeps flowing.',
@@ -1085,6 +1180,9 @@ export const architecture: Topic[] = [
 			['The cost', 'no joins across services, and keeping data consistent gets harder.']
 		],
 		tip: 'If two services read the same table, they are one service wearing two names.',
+		links: [
+			['Database per service', 'https://microservices.io/patterns/data/database-per-service.html']
+		],
 		sketch: {
 			kind: 'C4 Container diagram',
 			alt: 'The order and product services each have their own database. During a sale, only the order database is scaled.',
@@ -1144,6 +1242,7 @@ export const architecture: Topic[] = [
 			['When to use which', 'REST when the caller needs an answer now, events when it does not.']
 		],
 		tip: 'Events can arrive twice, so make consumers safe to run again with the same event.',
+		links: [['Apache Kafka introduction', 'https://kafka.apache.org/intro']],
 		sketch: {
 			kind: 'Data flow diagram',
 			alt: 'The order service writes an event to a Kafka topic. Billing and email consumers read it. A broker failure is covered by a replica.',
@@ -1218,6 +1317,10 @@ export const architecture: Topic[] = [
 			['Shared parts', 'keep one config for backend URLs, and one helper for all requests.']
 		],
 		tip: 'A headless component should know nothing about your business. If it mentions a product, it is not headless.',
+		links: [
+			['Headless component', 'https://martinfowler.com/articles/headless-component.html'],
+			['Modularizing React apps', 'https://martinfowler.com/articles/modularizing-react-apps.html']
+		],
 		sketch: {
 			kind: 'Component diagram',
 			alt: 'One headless data list provides paging and state. A product table and a tour card grid both use it with different styling.',
@@ -1339,6 +1442,197 @@ export const architecture: Topic[] = [
 		}
 	},
 	{
+		id: 'saga',
+		title: 'Sagas: transactions across services',
+		summary:
+			'With one database per service, a single transaction can no longer cover the order, the payment and the stock. A saga splits the work into local steps, one per service. If a later step fails, the earlier ones are undone by compensating actions that you write yourself.',
+		points: [
+			['Local transaction', 'each step commits in its own service, then the next step starts.'],
+			[
+				'Compensation',
+				'a hand-written undo, like refunding a payment. It is a new action, not a rollback.'
+			],
+			[
+				'Choreography',
+				'each service reacts to the events of the others. No central brain, but the flow is hard to follow.'
+			],
+			[
+				'Orchestration',
+				'one coordinator tells each service what to do next and remembers how far the saga got.'
+			],
+			['No isolation', 'other requests can see half-finished work, so design for it.']
+		],
+		tip: 'Make every step and every compensation safe to run twice, because messages get retried.',
+		links: [
+			['Saga pattern', 'https://microservices.io/patterns/data/saga.html'],
+			['Saga design pattern', 'https://learn.microsoft.com/en-us/azure/architecture/patterns/saga']
+		],
+		sketch: {
+			kind: 'Orchestration diagram',
+			alt: 'An orchestrator asks Orders, Payments and Stock to act in turn. Stock fails, so it refunds the payment and cancels the order.',
+			h: 210,
+			nodes: [
+				{
+					id: 'orch',
+					label: 'Order saga\norchestrator',
+					x: 240,
+					y: 45,
+					w: 160,
+					h: 62,
+					fill: 'yellow'
+				},
+				{ id: 'ord', label: 'Orders', x: 80, y: 160, w: 110, h: 56, fill: 'sky' },
+				{ id: 'pay', label: 'Payments', x: 240, y: 160, w: 110, h: 56, fill: 'mint' },
+				{ id: 'stock', label: 'Stock', x: 400, y: 160, w: 110, h: 56, fill: 'pink' }
+			],
+			edges: [
+				{ from: 'orch', to: 'ord', label: '1' },
+				{ from: 'orch', to: 'pay', label: '2' },
+				{ from: 'orch', to: 'stock', label: '3' }
+			],
+			steps: [
+				{
+					say: 'A customer orders. The orchestrator asks Orders to create the order as pending.',
+					send: [['orch', 'ord']],
+					set: { ord: 'Orders\npending' },
+					light: ['ord']
+				},
+				{
+					say: 'Next, Payments charges the card and commits in its own database.',
+					send: [['orch', 'pay']],
+					set: { ord: 'Orders\npending', pay: 'Payments\ncharged' },
+					light: ['pay']
+				},
+				{
+					say: 'Stock is asked to reserve the item, but it has just sold out. This step fails.',
+					send: [['orch', 'stock']],
+					set: { ord: 'Orders\npending', pay: 'Payments\ncharged', stock: 'Stock\nsold out' },
+					down: ['stock']
+				},
+				{
+					say: 'There is no shared rollback, so the orchestrator runs a compensation: refund the card.',
+					send: [['orch', 'pay']],
+					set: { ord: 'Orders\npending', pay: 'Payments\nrefunded', stock: 'Stock\nsold out' },
+					down: ['stock'],
+					light: ['pay']
+				},
+				{
+					say: 'Then it cancels the order. Every service agrees again, just a moment later than one database would.',
+					send: [['orch', 'ord']],
+					set: { ord: 'Orders\ncancelled', pay: 'Payments\nrefunded', stock: 'Stock\nsold out' },
+					light: ['ord']
+				}
+			]
+		}
+	},
+	{
+		id: 'cqrs',
+		title: 'CQRS and event sourcing',
+		summary:
+			'CQRS splits a service in two: one model handles commands that change data, and another answers queries. Event sourcing goes further and stores every change as an event, so the current state is rebuilt by replaying them. Both pay off in the right corner of a system and cost a lot everywhere else.',
+		points: [
+			['Command side', 'checks the rules and applies a change, such as PlaceOrder.'],
+			['Query side', 'read models shaped for each screen, so reads need no joins.'],
+			['Event store', 'an append-only history of what happened. Nothing is updated in place.'],
+			['Projection', 'code that reads new events and keeps a read model up to date.'],
+			['The cost', 'read models lag slightly behind, and there is much more code to own.']
+		],
+		tip: 'Use CQRS for one busy or complicated part of the system, never as the default for every service.',
+		links: [
+			['CQRS (Fowler)', 'https://martinfowler.com/bliki/CQRS.html'],
+			['Event sourcing (Fowler)', 'https://martinfowler.com/eaaDev/EventSourcing.html'],
+			['CQRS pattern', 'https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs']
+		],
+		sketch: {
+			kind: 'Data flow diagram',
+			alt: 'Commands append events to an event store. A projection turns the events into a read model, and queries read from that model.',
+			h: 205,
+			nodes: [
+				{ id: 'user', label: 'User', x: 30, y: 105, shape: 'person' },
+				{ id: 'cmd', label: 'Command\nside', x: 150, y: 45, w: 110, h: 56, fill: 'sky' },
+				{ id: 'qry', label: 'Query\nside', x: 150, y: 165, w: 110, h: 56, fill: 'sky' },
+				{
+					id: 'store',
+					label: 'Event store',
+					x: 320,
+					y: 45,
+					w: 120,
+					h: 66,
+					shape: 'db',
+					fill: 'yellow'
+				},
+				{
+					id: 'read',
+					label: 'Read model',
+					x: 320,
+					y: 165,
+					w: 120,
+					h: 66,
+					shape: 'db',
+					fill: 'mint'
+				},
+				{ id: 'proj', label: 'Projection', x: 432, y: 105, w: 92, h: 46, fill: 'pink' }
+			],
+			edges: [
+				{ from: 'user', to: 'cmd' },
+				{ from: 'cmd', to: 'store', label: 'append' },
+				{ from: 'store', to: 'proj' },
+				{ from: 'proj', to: 'read' },
+				{ from: 'user', to: 'qry' },
+				{ from: 'qry', to: 'read' }
+			],
+			steps: [
+				{
+					say: 'A customer places an order. The command side checks the rules and appends an event.',
+					send: [
+						['user', 'cmd'],
+						['cmd', 'store']
+					],
+					set: { store: 'OrderPlaced' },
+					light: ['store']
+				},
+				{
+					say: 'Nothing is overwritten. Each change becomes one more line in the history.',
+					send: [['cmd', 'store']],
+					set: { store: 'OrderPlaced\nItemAdded' },
+					light: ['store']
+				},
+				{
+					say: 'A projection reads the new events and updates a read model built for the orders screen.',
+					send: [
+						['store', 'proj'],
+						['proj', 'read']
+					],
+					set: { store: 'OrderPlaced\nItemAdded' },
+					light: ['read']
+				},
+				{
+					say: 'The screen asks the query side, which reads one ready-made row. No joins, and no load on the write side.',
+					send: [
+						['user', 'qry'],
+						['qry', 'read']
+					],
+					set: { store: 'OrderPlaced\nItemAdded' },
+					light: ['qry']
+				},
+				{
+					say: 'A bug corrupts the read model. Nothing is lost, because the events are the truth.',
+					set: { store: 'OrderPlaced\nItemAdded' },
+					down: ['read']
+				},
+				{
+					say: 'Throw the read model away and replay every event to build it again.',
+					send: [
+						['store', 'proj'],
+						['proj', 'read']
+					],
+					set: { store: 'OrderPlaced\nItemAdded', read: 'Rebuilt' },
+					light: ['read']
+				}
+			]
+		}
+	},
+	{
 		id: 'diagram-choice',
 		part: C4,
 		title: 'Which diagram should you draw?',
@@ -1419,6 +1713,7 @@ export const architecture: Topic[] = [
 			['Audience', 'everyone, including managers and customers.']
 		],
 		tip: 'If you only ever draw one diagram, make it this one.',
+		links: [['System context diagram', 'https://c4model.com/diagrams/system-context']],
 		sketch: {
 			kind: 'C4 Context diagram',
 			alt: 'A shopper uses the online shop. The shop takes card payments through a payment provider and sends receipts through an email service.',
@@ -1472,6 +1767,7 @@ export const architecture: Topic[] = [
 			['Audience', 'developers, and operations and support staff.']
 		],
 		tip: 'Label every arrow with what it carries and how, like "JSON over HTTPS".',
+		links: [['Container diagram', 'https://c4model.com/diagrams/container']],
 		sketch: {
 			kind: 'C4 Container diagram',
 			alt: 'Inside the online shop, a web app calls the orders API and catalog search. The orders API writes to a database and publishes to an event bus, which triggers a receipts function.',
@@ -1546,6 +1842,7 @@ export const architecture: Topic[] = [
 			['When to skip', 'small containers, where the code is already easy to follow.']
 		],
 		tip: 'Keep this level up to date by generating it, or do not keep it at all.',
+		links: [['Component diagram', 'https://c4model.com/diagrams/component']],
 		sketch: {
 			kind: 'C4 Component diagram',
 			alt: 'Inside the Orders API, the order controller calls the checkout service, which uses a payment client and an order repository. Those reach the payment provider and the orders database.',
@@ -1609,6 +1906,7 @@ export const architecture: Topic[] = [
 			['When to use it', 'for the tricky corner of a system, not everywhere.']
 		],
 		tip: 'Draw this level only for code that keeps confusing people.',
+		links: [['Code diagram', 'https://c4model.com/diagrams/code']],
 		sketch: {
 			kind: 'C4 Code diagram (UML class)',
 			alt: 'CheckoutService creates an Order and calls the PaymentClient interface. CardPayments implements that interface.',

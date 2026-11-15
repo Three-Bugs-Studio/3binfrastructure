@@ -37,6 +37,10 @@ void loop() {
   digitalWrite(LED, LOW);
   delay(500);
 }`,
+				links: [
+					['Blink example', 'https://docs.arduino.cc/built-in-examples/basics/Blink/'],
+					['Arduino Uno Rev3', 'https://docs.arduino.cc/hardware/uno-rev3/']
+				],
 				sketch: {
 					kind: 'Circuit and code',
 					alt: 'Pin 13 drives a resistor and an LED to ground. The loop turns the pin on, waits, turns it off, and waits again.',
@@ -99,6 +103,13 @@ void loop() {
   int brightness = map(raw, 0, 1023, 0, 255);
   analogWrite(9, brightness);               // PWM on pin 9
 }`,
+				links: [
+					[
+						'analogRead()',
+						'https://docs.arduino.cc/language-reference/en/functions/analog-io/analogRead/'
+					],
+					['Basics of PWM', 'https://docs.arduino.cc/learn/microcontrollers/analog-output/']
+				],
 				sketch: {
 					kind: 'Signal flow diagram',
 					alt: 'A knob gives a voltage, the ADC turns it into a number, the code scales it, and PWM sets the LED brightness.',
@@ -179,6 +190,13 @@ void loop() {
     // handle it here
   }
 }`,
+				links: [
+					[
+						'attachInterrupt()',
+						'https://docs.arduino.cc/language-reference/en/functions/external-interrupts/attachInterrupt/'
+					],
+					['Debounce example', 'https://docs.arduino.cc/built-in-examples/digital/Debounce/']
+				],
 				sketch: {
 					kind: 'Interrupt flow',
 					alt: 'While the main loop runs a slow task, a button press triggers an interrupt that sets a flag, then the loop resumes and handles it.',
@@ -224,6 +242,209 @@ void loop() {
 							send: [['f', 'l']],
 							set: { f: 'pressed\ntrue' },
 							light: ['l']
+						}
+					]
+				}
+			},
+			{
+				id: 'serial',
+				title: 'Serial: talking over UART',
+				summary:
+					'A UART sends bytes one bit at a time over two wires, TX and RX, with no shared clock. Both ends agree on the speed in advance. On the Uno, Serial uses pins 0 and 1, and a second chip turns that into USB for your computer.',
+				points: [
+					[
+						'Baud rate',
+						'bits per second. Both ends must match, or you read garbage. 9600 and 115200 are common.'
+					],
+					['Frame', 'by default a start bit, 8 data bits and one stop bit, called 8N1.'],
+					[
+						'Cross the wires',
+						'TX of one board goes to RX of the other, and the grounds must be joined.'
+					],
+					[
+						'Pins 0 and 1',
+						'they are shared with the USB link, so keep them free while you upload a sketch.'
+					]
+				],
+				tip: 'Serial.println is the cheapest debugger you have. Print the value before you guess at it.',
+				code: `void setup() {
+  pinMode(13, OUTPUT);
+  Serial.begin(9600);                // 8N1 by default
+}
+
+void loop() {
+  if (Serial.available() > 0) {      // a byte arrived on RX
+    char c = Serial.read();
+    if (c == '1') digitalWrite(13, HIGH);
+    if (c == '0') digitalWrite(13, LOW);
+  }
+  Serial.println(analogRead(A0));    // goes out on TX
+  delay(200);
+}`,
+				links: [
+					[
+						'Serial reference',
+						'https://docs.arduino.cc/language-reference/en/functions/communication/serial/'
+					],
+					['UART guide', 'https://docs.arduino.cc/learn/communication/uart/']
+				],
+				sketch: {
+					kind: 'Data flow diagram',
+					alt: 'The ATmega328P sends a number out of its TX pin, the USB chip forwards it, and the Serial Monitor on the computer prints it. With the wrong baud rate it prints garbage.',
+					h: 185,
+					nodes: [
+						{ id: 'pc', label: 'Serial\nMonitor', x: 62, y: 55, w: 104, h: 66, fill: 'sky' },
+						{
+							id: 'usb',
+							label: 'USB chip\nATmega16U2',
+							x: 205,
+							y: 55,
+							w: 120,
+							h: 66,
+							fill: 'yellow'
+						},
+						{ id: 'mcu', label: 'ATmega328P\nidle', x: 395, y: 55, w: 140, h: 66, fill: 'mint' },
+						{ id: 'f', label: 'TX line idle: HIGH', x: 240, y: 150, w: 300, h: 46 }
+					],
+					edges: [
+						{ from: 'mcu', to: 'usb', label: 'TX pin 1' },
+						{ from: 'usb', to: 'pc', label: 'USB' }
+					],
+					steps: [
+						{
+							say: 'Serial.begin(9600) sets the speed. Both ends must use the same baud rate.',
+							set: { mcu: 'ATmega328P\n9600 baud', pc: 'Serial\nMonitor\n9600' },
+							light: ['mcu', 'pc']
+						},
+						{
+							say: 'Serial.println(511) hands the characters to the UART.',
+							set: { mcu: 'ATmega328P\nsends "511"' },
+							light: ['mcu']
+						},
+						{
+							say: 'Each byte leaves pin 1 as a start bit, 8 data bits and a stop bit.',
+							send: [['mcu', 'usb']],
+							set: { mcu: 'ATmega328P\nsends "511"', f: 'start | 8 data bits | stop' },
+							light: ['f']
+						},
+						{
+							say: 'The USB chip passes the bytes on, and the Serial Monitor prints 511.',
+							send: [['usb', 'pc']],
+							set: { pc: 'Serial\nMonitor\n511' },
+							light: ['pc']
+						},
+						{
+							say: 'Set the Monitor to 115200 by mistake, and the same bits come out as garbage.',
+							send: [
+								['mcu', 'usb'],
+								['usb', 'pc']
+							],
+							set: { pc: 'Serial\nMonitor\n?x#' },
+							down: ['pc']
+						}
+					]
+				}
+			},
+			{
+				id: 'i2c-spi',
+				title: 'I2C and SPI buses',
+				summary:
+					'Sensors, clocks and displays share a bus instead of each taking a pin per value. I2C needs only two wires and picks a device by its address. SPI uses more wires but runs much faster, and picks a device by pulling its chip select pin LOW.',
+				points: [
+					['I2C on the Uno', 'SDA is A4 and SCL is A5. The Wire library drives them.'],
+					['Address', 'each I2C device has a 7-bit address, so many can share the same two wires.'],
+					[
+						'Pull-ups',
+						'I2C devices only pull the lines low, so resistors must pull them high. Many breakout boards include them.'
+					],
+					[
+						'SPI on the Uno',
+						'MOSI is pin 11, MISO pin 12 and SCK pin 13, plus one chip select pin per device, often pin 10.'
+					],
+					['Chip select', 'only the device whose CS pin is LOW listens. The others ignore the bus.']
+				],
+				tip: 'Run an I2C scanner sketch first. If nothing answers at the address, check the wiring before the code.',
+				table: {
+					head: ['', 'I2C', 'SPI'],
+					rows: [
+						['Wires', 'SDA and SCL', 'MOSI, MISO, SCK, and a CS per device'],
+						['Picks a device by', '7-bit address', 'chip select pin'],
+						['Typical speed', '100 or 400 kHz', 'several MHz'],
+						['Uno pins', 'A4, A5', '11, 12, 13, and 10 for CS']
+					]
+				},
+				code: `#include <Wire.h>
+
+void setup() {
+  Wire.begin();                   // join the bus as controller
+  Wire.beginTransmission(0x68);   // an MPU-6050 motion sensor
+  Wire.write(0x6B);               // its power register
+  Wire.write(0);                  // 0 = wake up
+  Wire.endTransmission();
+}
+
+void loop() {}`,
+				links: [
+					['I2C with the Wire library', 'https://docs.arduino.cc/learn/communication/wire/'],
+					['SPI guide', 'https://docs.arduino.cc/learn/communication/spi/']
+				],
+				sketch: {
+					kind: 'Bus diagram',
+					alt: 'An Arduino Uno shares one I2C bus with three devices at different addresses. It calls address 0x68 and only that device answers. With SPI, a chip select line picks the device instead.',
+					h: 200,
+					nodes: [
+						{ id: 'uno', label: 'Uno\ncontroller', x: 70, y: 100, w: 110, h: 66, fill: 'sky' },
+						{ id: 'bus', label: 'SDA + SCL\nidle', x: 235, y: 100, w: 110, h: 60, fill: 'yellow' },
+						{ id: 's1', label: 'Temp\n0x48', x: 400, y: 35, w: 120, h: 52, fill: 'mint' },
+						{ id: 's2', label: 'Clock\n0x68', x: 400, y: 100, w: 120, h: 52, fill: 'mint' },
+						{ id: 's3', label: 'Display\n0x3C', x: 400, y: 165, w: 120, h: 52, fill: 'mint' }
+					],
+					edges: [
+						{ from: 'uno', to: 'bus', plain: true },
+						{ from: 'bus', to: 's1', plain: true },
+						{ from: 'bus', to: 's2', plain: true },
+						{ from: 'bus', to: 's3', plain: true }
+					],
+					steps: [
+						{
+							say: 'Three devices share the same two wires, SDA and SCL.',
+							light: ['bus']
+						},
+						{
+							say: 'The Uno starts a message with address 0x68.',
+							send: [['uno', 'bus']],
+							set: { bus: 'SDA + SCL\n0x68?' },
+							light: ['uno']
+						},
+						{
+							say: 'Every device hears the address, but only the clock at 0x68 answers.',
+							send: [['bus', 's2']],
+							set: { bus: 'SDA + SCL\n0x68?' },
+							light: ['s2'],
+							down: ['s1', 's3']
+						},
+						{
+							say: 'The clock sends its data back over the same two wires.',
+							send: [
+								['s2', 'bus'],
+								['bus', 'uno']
+							],
+							set: { bus: 'SDA + SCL\ndata' },
+							light: ['uno']
+						},
+						{
+							say: 'SPI does the same job with a chip select line per device. Pull one LOW, and only that one listens.',
+							send: [
+								['uno', 'bus'],
+								['bus', 's3']
+							],
+							set: {
+								bus: 'SPI\nCS 3 LOW',
+								s1: 'Temp\nCS HIGH',
+								s2: 'Clock\nCS HIGH',
+								s3: 'Display\nCS LOW'
+							},
+							light: ['s3']
 						}
 					]
 				}
@@ -340,6 +561,16 @@ int main(void) {
         CLK_SysTickDelay(200000);
     }
 }`,
+				links: [
+					[
+						'BSP GPIO sample',
+						'https://github.com/OpenNuvoton/NUC100BSP/tree/master/SampleCode/StdDriver/GPIO_OutputInput'
+					],
+					[
+						'Memory-mapped I/O',
+						'https://en.wikipedia.org/wiki/Memory-mapped_I/O_and_port-mapped_I/O'
+					]
+				],
 				sketch: {
 					kind: 'Register diagram',
 					alt: 'A line of C code writes a bit into a GPIO data register, which changes the voltage on pin PC12 and lights an LED.',
@@ -412,6 +643,16 @@ TIMER_Open(TIMER0, TIMER_PERIODIC_MODE, 2);   // 2 Hz
 TIMER_EnableInt(TIMER0);
 NVIC_EnableIRQ(TMR0_IRQn);
 TIMER_Start(TIMER0);`,
+				links: [
+					[
+						'BSP periodic timer sample',
+						'https://github.com/OpenNuvoton/NUC100BSP/tree/master/SampleCode/StdDriver/TIMER_PeriodicINT'
+					],
+					[
+						'CMSIS NVIC functions',
+						'https://arm-software.github.io/CMSIS_5/Core/html/group__NVIC__gr.html'
+					]
+				],
 				sketch: {
 					kind: 'Interrupt flow',
 					alt: 'A timer counts up to its target and raises an interrupt. The NVIC stops the main code, the handler toggles an LED and clears the flag, and main resumes.',
@@ -453,6 +694,191 @@ TIMER_Start(TIMER0);`,
 						}
 					]
 				}
+			},
+			{
+				id: 'uart',
+				title: 'UART and printf',
+				summary:
+					'Before you can debug a board, you need to see what it is doing. Route UART0 to a USB-to-serial adapter, and every printf in your code appears in a terminal on your PC. Getting there takes a clock, a pin setting and a baud rate.',
+				points: [
+					[
+						'Multi-function pins',
+						'most pins can do several jobs. SYS->GPB_MFP gives PB0 and PB1 to UART0 instead of GPIO.'
+					],
+					[
+						'Clock first',
+						'enable the UART0 module clock and pick its source, like any peripheral.'
+					],
+					['UART_Open', 'sets the baud rate and an 8N1 frame in one call.'],
+					['printf', "the BSP's retarget code sends each character to UART0, its debug port."]
+				],
+				tip: 'Garbage on screen means a baud rate or clock mismatch. Silence usually means the pin function was never set.',
+				code: `SYS_UnlockReg();
+CLK_EnableModuleClock(UART0_MODULE);
+CLK_SetModuleClock(UART0_MODULE, CLK_CLKSEL1_UART_S_HXT, CLK_CLKDIV_UART(1));
+
+// hand PB0 and PB1 to UART0 instead of GPIO
+SYS->GPB_MFP &= ~(SYS_GPB_MFP_PB0_Msk | SYS_GPB_MFP_PB1_Msk);
+SYS->GPB_MFP |= SYS_GPB_MFP_PB0_UART0_RXD | SYS_GPB_MFP_PB1_UART0_TXD;
+SYS_LockReg();
+
+UART_Open(UART0, 115200);
+printf("Hello from the NUC140\\n");`,
+				links: [
+					[
+						'BSP UART sample',
+						'https://github.com/OpenNuvoton/NUC100BSP/tree/master/SampleCode/StdDriver/UART_TxRx_Function'
+					],
+					['UART', 'https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter']
+				],
+				sketch: {
+					kind: 'Data flow diagram',
+					alt: 'printf hands characters to UART0, which drives pin PB1, which reaches a terminal on the PC. It only works once the UART has a clock and the pin is switched to its UART function.',
+					h: 185,
+					nodes: [
+						{ id: 'c', label: 'printf()', x: 62, y: 50, w: 104, h: 56, fill: 'sky' },
+						{ id: 'u', label: 'UART0\nno clock', x: 200, y: 50, w: 116, h: 66, fill: 'yellow' },
+						{ id: 'p', label: 'PB1\nGPIO', x: 340, y: 50, w: 96, h: 66, fill: 'pink' },
+						{ id: 'pc', label: 'PC terminal', x: 340, y: 150, w: 150, h: 46, fill: 'mint' }
+					],
+					edges: [
+						{ from: 'c', to: 'u' },
+						{ from: 'u', to: 'p' },
+						{ from: 'p', to: 'pc' }
+					],
+					steps: [
+						{
+							say: 'You call printf(), but nothing appears. UART0 has no clock yet.',
+							send: [['c', 'u']],
+							down: ['u']
+						},
+						{
+							say: 'Enable the UART0 clock and open it at 115200 baud.',
+							set: { u: 'UART0\n115200' },
+							light: ['u']
+						},
+						{
+							say: 'Still silence. PB1 is working as a plain GPIO pin.',
+							send: [['u', 'p']],
+							set: { u: 'UART0\n115200' },
+							down: ['p']
+						},
+						{
+							say: 'Set the multi-function register, and PB1 becomes UART0 TXD.',
+							set: { u: 'UART0\n115200', p: 'PB1\nUART0 TXD' },
+							light: ['p']
+						},
+						{
+							say: 'Now each character leaves the pin and shows up on your PC.',
+							send: [
+								['c', 'u'],
+								['u', 'p'],
+								['p', 'pc']
+							],
+							set: { u: 'UART0\n115200', p: 'PB1\nUART0 TXD', pc: 'Hello from\nthe NUC140' },
+							light: ['pc']
+						}
+					]
+				}
+			},
+			{
+				id: 'watchdog',
+				title: 'The watchdog timer',
+				summary:
+					'Embedded code can hang, and nobody is there to press reset. A watchdog is a timer that resets the chip unless your code reloads it in time. A healthy loop keeps reloading it, and a stuck one gets restarted.',
+				points: [
+					[
+						'Kick',
+						'reloading the counter with WDT_RESET_COUNTER(). The control register is write-protected, so unlock first.'
+					],
+					[
+						'Timeout',
+						'set in powers of two of the WDT clock. With the 10 kHz internal clock, 2^14 ticks is about 1.6 s.'
+					],
+					['Reset or interrupt', 'WDT_Open chooses whether a timeout resets the chip.'],
+					[
+						'Reset flag',
+						'after start-up, WDT_GET_RESET_FLAG() tells you the last reset came from the watchdog.'
+					]
+				],
+				tip: 'Kick only after the whole loop has done its work. Kicking from a timer interrupt keeps a frozen program alive.',
+				skip: 'Without a watchdog, one wait for a sensor that never answers freezes the device until someone pulls the plug.',
+				code: `SYS_UnlockReg();
+CLK_EnableXtalRC(CLK_PWRCON_OSC10K_EN_Msk);          // 10 kHz clock
+CLK_WaitClockReady(CLK_CLKSTATUS_OSC10K_STB_Msk);
+CLK_EnableModuleClock(WDT_MODULE);
+CLK_SetModuleClock(WDT_MODULE, CLK_CLKSEL1_WDT_S_LIRC, 0);
+WDT_Open(WDT_TIMEOUT_2POW14, WDT_RESET_DELAY_1026CLK, TRUE, FALSE);
+SYS_LockReg();
+
+while (1) {
+    do_the_work();
+    SYS_UnlockReg();
+    WDT_RESET_COUNTER();   // all done: kick it
+    SYS_LockReg();
+}`,
+				links: [
+					[
+						'BSP watchdog reset sample',
+						'https://github.com/OpenNuvoton/NUC100BSP/tree/master/SampleCode/StdDriver/WDT_TimeoutReset'
+					],
+					['Watchdog timer', 'https://en.wikipedia.org/wiki/Watchdog_timer']
+				],
+				sketch: {
+					kind: 'Failure scenario',
+					alt: 'The main loop kicks the watchdog on every pass. When the loop gets stuck waiting for a sensor, the kicks stop, the watchdog runs out and resets the chip.',
+					h: 185,
+					nodes: [
+						{ id: 'loop', label: 'main loop\nworking', x: 75, y: 50, w: 130, h: 66, fill: 'sky' },
+						{
+							id: 'w',
+							label: 'Watchdog\n1.6 s left',
+							x: 260,
+							y: 50,
+							w: 130,
+							h: 66,
+							fill: 'yellow'
+						},
+						{ id: 'r', label: 'Reset', x: 420, y: 50, w: 90, h: 66, fill: 'pink' },
+						{ id: 's', label: 'Sensor', x: 75, y: 150, w: 110, h: 46, fill: 'mint' }
+					],
+					edges: [
+						{ from: 'loop', to: 'w', label: 'kick' },
+						{ from: 'w', to: 'r', dashed: true },
+						{ from: 'loop', to: 's' }
+					],
+					steps: [
+						{
+							say: 'The watchdog counts down from about 1.6 s.',
+							set: { w: 'Watchdog\n0.9 s left' },
+							light: ['w']
+						},
+						{
+							say: 'The loop finishes its work and kicks it, so the count starts over.',
+							send: [['loop', 'w']],
+							set: { w: 'Watchdog\n1.6 s left' },
+							light: ['loop']
+						},
+						{
+							say: 'Then the loop waits for a sensor that never answers.',
+							send: [['loop', 's']],
+							set: { loop: 'main loop\nstuck', w: 'Watchdog\n1.0 s left' },
+							down: ['s']
+						},
+						{
+							say: 'No more kicks arrive, and the count runs out.',
+							set: { loop: 'main loop\nstuck', w: 'Watchdog\n0 s left' },
+							down: ['loop', 's'],
+							light: ['w']
+						},
+						{
+							say: 'The watchdog resets the chip, and the program starts fresh instead of hanging forever.',
+							send: [['w', 'r']],
+							set: { loop: 'main loop\nrestarted' },
+							light: ['r']
+						}
+					]
+				}
 			}
 		]
 	},
@@ -487,6 +913,7 @@ TIMER_Start(TIMER0);`,
 						['Soft', 'Video call', 'A brief glitch']
 					]
 				},
+				links: [['Real-time computing', 'https://en.wikipedia.org/wiki/Real-time_computing']],
 				sketch: {
 					kind: 'Timing diagram',
 					alt: 'A crash is sensed and the airbag must fire within 20 milliseconds. A task finishing at 15 milliseconds succeeds, and one finishing at 25 fails.',
@@ -550,6 +977,13 @@ Task B: C = 6 ms, T = 20 ms
 
 U = 3/10 + 6/20 = 0.6
 0.6 ≤ 0.83, so all deadlines are met`,
+				links: [
+					['Rate-monotonic scheduling', 'https://en.wikipedia.org/wiki/Rate-monotonic_scheduling'],
+					[
+						'What really happened on Mars Pathfinder',
+						'https://www.cs.cornell.edu/courses/cs614/1999sp/papers/pathfinder.html'
+					]
+				],
 				sketch: {
 					kind: 'Scheduling diagram',
 					alt: 'Priority inversion: a low-priority task holds a lock needed by a high-priority task, a medium task delays it, and priority inheritance fixes it.',
@@ -619,6 +1053,10 @@ sudo chrt -f 80 ./control_loop
 
 # measure worst-case latency
 sudo cyclictest --mlockall --priority=90 --interval=1000`,
+				links: [
+					['sched(7) man page', 'https://man7.org/linux/man-pages/man7/sched.7.html'],
+					['PREEMPT_RT theory', 'https://docs.kernel.org/core-api/real-time/theory.html']
+				],
 				sketch: {
 					kind: 'Timing diagram',
 					alt: 'A 1 millisecond control loop on a Raspberry Pi: under normal scheduling, background load adds large delays. With real-time settings, the delay stays small.',
@@ -674,6 +1112,183 @@ sudo cyclictest --mlockall --priority=90 --interval=1000`,
 								['k', 'o']
 							],
 							light: ['o']
+						}
+					]
+				}
+			},
+			{
+				id: 'pi-gpio',
+				title: 'GPIO on the Raspberry Pi',
+				summary:
+					'The 40-pin header gives a Raspberry Pi the same kind of pins a microcontroller has, but Linux sits in between. You reach them through a kernel driver, usually with a library such as gpiozero, and every pin works at 3.3 V.',
+				points: [
+					[
+						'3.3 V only',
+						'the GPIO pins are not 5 V tolerant. A 5 V signal can destroy the chip, so use a level shifter.'
+					],
+					['Numbering', 'code uses GPIO numbers. GPIO17 sits on physical pin 11, not pin 17.'],
+					[
+						'Pull-ups',
+						'inputs have internal pull-up and pull-down resistors. A gpiozero Button turns the pull-up on by default.'
+					],
+					[
+						'Character device',
+						'the kernel exposes each GPIO chip as /dev/gpiochipN, and modern GPIO tools are built on it.'
+					],
+					[
+						'Events, not polling',
+						'a callback such as when_pressed runs when the kernel reports an edge, so your loop does not spin.'
+					]
+				],
+				tip: 'Edge events on Linux arrive late by an unpredictable amount. For microsecond timing, give the pin to a microcontroller.',
+				code: `from gpiozero import LED, Button
+from signal import pause
+
+led = LED(17)                          # GPIO17, physical pin 11
+button = Button(27, bounce_time=0.05)  # GPIO27, wire the other side to GND
+
+button.when_pressed = led.on
+button.when_released = led.off
+pause()                                # wait for events forever`,
+				links: [
+					[
+						'Raspberry Pi GPIO header',
+						'https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio'
+					],
+					['gpiozero recipes', 'https://gpiozero.readthedocs.io/en/stable/recipes.html'],
+					['GPIO character device', 'https://docs.kernel.org/userspace-api/gpio/chardev.html']
+				],
+				sketch: {
+					kind: 'Data flow diagram',
+					alt: 'A button press on GPIO27 is seen by the Linux kernel, passed to a Python callback, which turns on an LED on GPIO17. Under load, the kernel step can be delayed.',
+					h: 190,
+					nodes: [
+						{ id: 'b', label: 'Button\nGPIO27', x: 62, y: 50, w: 104, h: 66, fill: 'pink' },
+						{ id: 'k', label: 'Linux\nkernel', x: 200, y: 50, w: 104, h: 66, fill: 'yellow' },
+						{ id: 'py', label: 'Python\nwhen_pressed', x: 360, y: 50, w: 140, h: 66, fill: 'sky' },
+						{ id: 'l', label: 'LED GPIO17\noff', x: 360, y: 150, w: 140, h: 56, fill: 'mint' }
+					],
+					edges: [
+						{ from: 'b', to: 'k', label: 'edge' },
+						{ from: 'k', to: 'py', label: 'event' },
+						{ from: 'py', to: 'l' }
+					],
+					steps: [
+						{
+							say: 'Press the button. GPIO27 falls from 3.3 V to 0 V.',
+							set: { b: 'Button\n0 V' },
+							light: ['b']
+						},
+						{
+							say: 'The kernel GPIO driver sees the falling edge and queues an event.',
+							send: [['b', 'k']],
+							set: { b: 'Button\n0 V' },
+							light: ['k']
+						},
+						{
+							say: 'gpiozero picks up the event and calls your when_pressed function.',
+							send: [['k', 'py']],
+							light: ['py']
+						},
+						{
+							say: 'Your code drives GPIO17 HIGH, and the LED lights.',
+							send: [['py', 'l']],
+							set: { l: 'LED GPIO17\non' },
+							light: ['l']
+						},
+						{
+							say: 'Under heavy load the same path can take far longer. Fine for a doorbell, not for a motor.',
+							send: [['b', 'k']],
+							set: { k: 'Linux\nbusy' },
+							down: ['k']
+						}
+					]
+				}
+			},
+			{
+				id: 'periodic-tasks',
+				title: 'Periodic tasks without drift',
+				summary:
+					'Most real-time work is a loop that must run at a fixed rate, such as once every millisecond. Sleeping for a fixed time after each run lets small delays add up. Sleeping until an absolute time keeps the loop on schedule.',
+				points: [
+					[
+						'Relative sleep',
+						'wait 1 ms after the work. The work time and every late wake-up add to the period, so the loop drifts.'
+					],
+					[
+						'Absolute sleep',
+						'clock_nanosleep with TIMER_ABSTIME wakes at a fixed point in time, so errors do not pile up.'
+					],
+					[
+						'CLOCK_MONOTONIC',
+						'never jumps when the system time is corrected, unlike CLOCK_REALTIME.'
+					],
+					[
+						'Overrun',
+						'if the work takes longer than the period, the next deadline has already passed. Detect it and count it.'
+					]
+				],
+				tip: 'Work out the next wake-up from the previous one, never from the moment you happened to wake.',
+				code: `struct timespec next;
+clock_gettime(CLOCK_MONOTONIC, &next);
+
+while (1) {
+    next.tv_nsec += 1000000;               // + 1 ms
+    if (next.tv_nsec >= 1000000000) {
+        next.tv_nsec -= 1000000000;
+        next.tv_sec++;
+    }
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, NULL);
+    control_step();
+}`,
+				links: [
+					['clock_nanosleep(2)', 'https://man7.org/linux/man-pages/man2/clock_nanosleep.2.html']
+				],
+				sketch: {
+					kind: 'Timing diagram',
+					alt: 'A loop meant to run every millisecond does 0.3 ms of work. With a relative sleep it slips 0.3 ms every run. With an absolute sleep it wakes at 1, 2 and 3 ms exactly.',
+					h: 185,
+					nodes: [
+						{ id: 'c', label: 'Clock\nt = 0 ms', x: 70, y: 50, w: 120, h: 66, fill: 'yellow' },
+						{ id: 'l', label: 'Loop\nsleeping', x: 240, y: 50, w: 120, h: 66, fill: 'sky' },
+						{ id: 'w', label: 'Work\n0.3 ms', x: 410, y: 50, w: 110, h: 66, fill: 'mint' },
+						{ id: 'r', label: 'Relative sleep', x: 120, y: 150, w: 210, h: 46, fill: 'pink' },
+						{ id: 'a', label: 'Absolute sleep', x: 360, y: 150, w: 210, h: 46, fill: 'sky' }
+					],
+					edges: [
+						{ from: 'c', to: 'l', label: 'wake' },
+						{ from: 'l', to: 'w' }
+					],
+					steps: [
+						{
+							say: 'The loop should run at 1 ms, 2 ms, 3 ms and so on.',
+							set: { c: 'Clock\nt = 1 ms' },
+							light: ['c']
+						},
+						{
+							say: 'It wakes on time and does 0.3 ms of work.',
+							send: [
+								['c', 'l'],
+								['l', 'w']
+							],
+							set: { c: 'Clock\nt = 1 ms', l: 'Loop\nrunning' },
+							light: ['w']
+						},
+						{
+							say: 'Relative sleep: wait 1 ms from now, so the next run starts at 2.3 ms.',
+							set: { c: 'Clock\nt = 2.3 ms', r: 'Relative: 2.3 ms' },
+							down: ['r']
+						},
+						{
+							say: 'After 100 runs it is 30 ms behind, and still slipping.',
+							set: { c: 'Clock\nt = 130 ms', r: 'Relative: 30 ms late' },
+							down: ['r']
+						},
+						{
+							say: 'Absolute sleep: wake at exactly 2 ms, then 3 ms. The error never adds up.',
+							send: [['c', 'l']],
+							set: { c: 'Clock\nt = 2 ms', a: 'Absolute: 2, 3, 4 ms' },
+							light: ['a']
 						}
 					]
 				}

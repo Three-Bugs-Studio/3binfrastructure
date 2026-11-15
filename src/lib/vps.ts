@@ -24,6 +24,13 @@ export const vps: Topic[] = [
 			['Use an SSH key at purchase', 'most providers let you add one when creating the server.']
 		],
 		tip: 'Do the security steps before you deploy anything. Bots do not wait for you to finish.',
+		links: [
+			[
+				'Initial server setup (DigitalOcean)',
+				'https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu'
+			],
+			['Ubuntu Server docs', 'https://ubuntu.com/server/docs']
+		],
 		sketch: {
 			kind: 'Process diagram',
 			alt: 'The steps in order: buy the VPS, update it, set up SSH keys, add a firewall, deploy the app, add a domain with HTTPS, add backups, add monitoring, then go live.',
@@ -106,6 +113,12 @@ apt update && apt upgrade -y
 apt install -y unattended-upgrades
 dpkg-reconfigure -plow unattended-upgrades
 reboot`,
+		links: [
+			[
+				'Automatic updates (Ubuntu)',
+				'https://ubuntu.com/server/docs/how-to/software/automatic-updates/'
+			]
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'You connect to a new VPS. Without updates, scanner bots break in. With updates installed, their attacks fail.',
@@ -178,6 +191,13 @@ PermitRootLogin no
 PasswordAuthentication no
 
 sudo systemctl restart ssh`,
+		links: [
+			['OpenSSH server (Ubuntu)', 'https://ubuntu.com/server/docs/how-to/security/openssh-server/'],
+			[
+				'Set up SSH keys (DigitalOcean)',
+				'https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys-on-ubuntu-22-04'
+			]
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Bots guess passwords at the SSH login. Without keys they get in. With keys only, they are rejected and you get in with your private key.',
@@ -258,6 +278,13 @@ sudo systemctl restart ssh`,
 sudo ufw allow 80,443/tcp
 sudo ufw enable
 sudo ufw status`,
+		links: [
+			['Firewall (Ubuntu)', 'https://ubuntu.com/server/docs/how-to/security/firewalls/'],
+			[
+				'UFW guide (DigitalOcean)',
+				'https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu'
+			]
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Without a firewall, attackers reach the database port directly. With a firewall, only SSH and web ports are open and everything else is blocked.',
@@ -322,6 +349,13 @@ sudo ufw status`,
 		code: `sudo apt install -y fail2ban
 sudo systemctl enable --now fail2ban
 sudo fail2ban-client status sshd`,
+		links: [
+			['Fail2ban', 'https://github.com/fail2ban/fail2ban'],
+			[
+				'Protect SSH with Fail2ban',
+				'https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-22-04'
+			]
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'An attacker fails to log in repeatedly. Fail2ban reads the log and adds a firewall ban.',
@@ -394,6 +428,16 @@ A      www    203.0.113.10     300
 
 # check it from your laptop
 dig +short example.com`,
+		links: [
+			[
+				'What is a domain name? (MDN)',
+				'https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/What_is_a_domain_name'
+			],
+			[
+				'DNS terminology (DigitalOcean)',
+				'https://www.digitalocean.com/community/tutorials/an-introduction-to-dns-terminology-components-and-concepts'
+			]
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'A visitor asks DNS for example.com and gets the server IP, then connects to the VPS.',
@@ -466,6 +510,16 @@ WantedBy=multi-user.target
 
 # then
 sudo systemctl enable --now app`,
+		links: [
+			[
+				'systemd.service',
+				'https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html'
+			],
+			[
+				'Docker restart policies',
+				'https://docs.docker.com/engine/containers/start-containers-automatically/'
+			]
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Started from an SSH session, the app stops when the session ends. Started by systemd, it restarts after crashes and reboots.',
@@ -554,6 +608,10 @@ server {
 
 sudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx`,
+		links: [
+			['NGINX reverse proxy', 'https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/'],
+			['proxy_pass reference', 'https://nginx.org/en/docs/http/ngx_http_proxy_module.html']
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Without a proxy, visitors hit the app on port 3000 directly. With Nginx in front, it routes each domain to the right app on a private port.',
@@ -623,6 +681,10 @@ sudo certbot --nginx -d example.com -d www.example.com
 
 # prove that renewal works
 sudo certbot renew --dry-run`,
+		links: [
+			["Let's Encrypt: getting started", 'https://letsencrypt.org/getting-started/'],
+			['Certbot instructions', 'https://certbot.eff.org/instructions']
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: "Over plain HTTP, someone on the same network can read a password. With a certificate from Let's Encrypt, the traffic is encrypted.",
@@ -695,6 +757,13 @@ ports:
 
 # look inside from your laptop, through SSH
 ssh -L 5432:127.0.0.1:5432 deploy@203.0.113.10`,
+		links: [
+			[
+				'PostgreSQL listen_addresses',
+				'https://www.postgresql.org/docs/current/runtime-config-connection.html'
+			],
+			['PostgreSQL over an SSH tunnel', 'https://www.postgresql.org/docs/current/ssh-tunnels.html']
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'An exposed database gets wiped by attackers. Bound to localhost, only the app on the same server can reach it.',
@@ -750,6 +819,243 @@ ssh -L 5432:127.0.0.1:5432 deploy@203.0.113.10`,
 		}
 	},
 	{
+		id: 'compose',
+		title: 'Docker Compose on one server',
+		summary:
+			'Compose describes your whole stack in one file: the app, the database and how they connect. One command starts it, and the same command updates it. Two details decide whether it is safe: where the data lives, and which ports you publish.',
+		points: [
+			[
+				'Named volume',
+				"data that must survive goes in a volume. A container's own files are thrown away when it is replaced."
+			],
+			['restart', 'unless-stopped brings containers back after a crash or a reboot.'],
+			[
+				'Service names',
+				'containers reach each other by name, such as db:5432, with no published port.'
+			],
+			['Docker and ufw', 'published ports skip ufw rules, so bind them to 127.0.0.1.'],
+			['Updates', 'pull, then up -d. Only containers whose image or config changed are replaced.']
+		],
+		tip: 'Publish only the port Nginx needs, and only on 127.0.0.1.',
+		skip: 'uploads saved inside a container vanish on the next deploy, and a published database port is open to the internet even while ufw says it is closed.',
+		code: `# compose.yaml
+services:
+  app:
+    image: ghcr.io/me/shop:1.4
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - uploads:/app/uploads
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+volumes:
+  uploads:
+  dbdata:
+
+# start, or update to a new image
+docker compose pull && docker compose up -d`,
+		links: [
+			['Docker Compose', 'https://docs.docker.com/compose/'],
+			['Volumes', 'https://docs.docker.com/engine/storage/volumes/'],
+			['Docker and firewalls', 'https://docs.docker.com/engine/network/packet-filtering-firewalls/']
+		],
+		sketch: {
+			kind: 'Skip vs set up',
+			alt: 'Photos saved inside the app container are lost when a deploy replaces it. Saved in a named volume, they survive every deploy.',
+			h: 205,
+			nodes: [
+				{ id: 'vps', label: 'Your VPS', x: 300, y: 102, w: 345, h: 196, shape: 'boundary' },
+				{ id: 'you', label: 'You', x: 40, y: 72, shape: 'person' },
+				{ id: 'app', label: 'App v1', x: 230, y: 55, w: 130, h: 56, fill: 'sky' },
+				{
+					id: 'layer',
+					label: 'Photos inside\ncontainer',
+					x: 230,
+					y: 150,
+					w: 130,
+					h: 62,
+					fill: 'pink'
+				},
+				{
+					id: 'vol',
+					label: 'Named\nvolume',
+					x: 400,
+					y: 140,
+					w: 110,
+					h: 80,
+					shape: 'db',
+					fill: 'mint'
+				}
+			],
+			edges: [
+				{ from: 'you', to: 'app', label: 'deploy' },
+				{ from: 'app', to: 'layer' },
+				{ from: 'app', to: 'vol' }
+			],
+			steps: [
+				{
+					say: 'SKIPPED: users upload photos, and the app saves them inside its own container.',
+					hide: ['vol'],
+					send: [['app', 'layer']],
+					light: ['layer']
+				},
+				{
+					say: 'SKIPPED: you deploy v2. Compose replaces the old container with a fresh one.',
+					hide: ['vol'],
+					send: [['you', 'app']],
+					set: { app: 'App v2' },
+					light: ['app']
+				},
+				{
+					say: 'SKIPPED: the old container is gone, and every photo went with it.',
+					hide: ['vol'],
+					set: { app: 'App v2', layer: 'Photos\ngone' },
+					down: ['layer']
+				},
+				{
+					say: 'SET UP: the uploads folder is a named volume, which lives outside any container.',
+					hide: ['layer'],
+					send: [['app', 'vol']],
+					light: ['vol']
+				},
+				{
+					say: 'SET UP: deploy v2. The container is replaced, and the same volume is attached to the new one.',
+					hide: ['layer'],
+					send: [
+						['you', 'app'],
+						['app', 'vol']
+					],
+					set: { app: 'App v2' }
+				},
+				{
+					say: 'SET UP: every photo is still there, deploy after deploy.',
+					hide: ['layer'],
+					set: { app: 'App v2', vol: 'Photos\nsafe' },
+					light: ['vol']
+				}
+			]
+		}
+	},
+	{
+		id: 'user-services',
+		title: 'Services without sudo: systemd --user',
+		summary:
+			'The deploy user has to restart the app on every release. Giving it sudo means a stolen deploy key is a stolen server. A systemd user service lets that user manage its own app and nothing else, and lingering keeps it running from boot with nobody logged in.',
+		points: [
+			['User unit', 'a service file in ~/.config/systemd/user/, managed with systemctl --user.'],
+			[
+				'Linger',
+				"loginctl enable-linger starts the user's services at boot and keeps them after logout."
+			],
+			['No sudo', 'the deploy user can restart its own app, and that is all.'],
+			['Log in directly', 'SSH in as that user. systemctl --user often fails after su or sudo -u.'],
+			['Ports', 'a normal user cannot bind ports below 1024, so keep Nginx in front.']
+		],
+		tip: 'Run one Linux user per app, so a bug in one app cannot read the files of another.',
+		skip: 'CI logs in with a key that has full sudo. If that key leaks, the attacker owns the whole server, not just one app.',
+		code: `# as an admin, once
+sudo loginctl enable-linger deploy
+
+# as deploy: ~/.config/systemd/user/app.service
+[Unit]
+Description=My app
+
+[Service]
+WorkingDirectory=%h/app
+EnvironmentFile=%h/app/.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+
+[Install]
+WantedBy=default.target
+
+# still as deploy
+systemctl --user daemon-reload
+systemctl --user enable --now app
+systemctl --user restart app   # on each deploy`,
+		links: [
+			[
+				'loginctl enable-linger',
+				'https://www.freedesktop.org/software/systemd/man/latest/loginctl.html'
+			],
+			[
+				'User unit paths (systemd.unit)',
+				'https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html'
+			]
+		],
+		sketch: {
+			kind: 'Skip vs set up',
+			alt: 'A deploy key with sudo leaks and the whole server is taken. With a systemd user service, the same key can only restart one app.',
+			h: 205,
+			nodes: [
+				{ id: 'vps', label: 'Your VPS', x: 310, y: 102, w: 330, h: 196, shape: 'boundary' },
+				{ id: 'ci', label: 'CI deploy\nkey', x: 70, y: 55, w: 120, h: 62, fill: 'sky' },
+				{ id: 'atk', label: 'Leaked key', x: 70, y: 155, w: 120, h: 52, fill: 'pink' },
+				{ id: 'app', label: 'App\n(deploy user)', x: 245, y: 60, w: 130, h: 62, fill: 'yellow' },
+				{ id: 'sys', label: 'systemd\n--user', x: 400, y: 60, w: 110, h: 62, fill: 'mint' },
+				{
+					id: 'root',
+					label: 'Other apps\n+ root',
+					x: 320,
+					y: 155,
+					w: 150,
+					h: 62,
+					fill: 'sky'
+				}
+			],
+			edges: [
+				{ from: 'ci', to: 'app', label: 'restart' },
+				{ from: 'sys', to: 'app' },
+				{ from: 'atk', to: 'root', dashed: true }
+			],
+			steps: [
+				{
+					say: 'SKIPPED: CI deploys as a user with full sudo, just so it can restart the app.',
+					hide: ['sys', 'atk'],
+					send: [['ci', 'app']],
+					set: { ci: 'CI key\nwith sudo' },
+					light: ['app']
+				},
+				{
+					say: 'SKIPPED: the deploy key leaks from an old laptop.',
+					hide: ['sys'],
+					set: { ci: 'CI key\nwith sudo' },
+					light: ['atk']
+				},
+				{
+					say: 'SKIPPED: with sudo, the attacker reads every file and takes over every app on the box.',
+					hide: ['sys'],
+					send: [['atk', 'root']],
+					set: { ci: 'CI key\nwith sudo', root: 'Whole server\ntaken' },
+					down: ['root']
+				},
+				{
+					say: 'SET UP: the app is a user service. Lingering starts it at boot, with nobody logged in.',
+					hide: ['atk'],
+					send: [['sys', 'app']],
+					light: ['sys']
+				},
+				{
+					say: 'SET UP: CI restarts it with systemctl --user. No sudo needed.',
+					hide: ['atk'],
+					send: [['ci', 'app']],
+					light: ['app']
+				},
+				{
+					say: 'SET UP: if the key leaks now, it reaches this one app and stops there.',
+					send: [['atk', 'app']],
+					set: { root: 'Other apps\nuntouched' },
+					light: ['root']
+				}
+			]
+		}
+	},
+	{
 		id: 'memory',
 		part: ALIVE,
 		title: 'Memory and swap',
@@ -768,6 +1074,12 @@ sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab`,
+		links: [
+			[
+				'Add swap on Ubuntu (DigitalOcean)',
+				'https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-22-04'
+			]
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Memory fills during a spike. Without swap, Linux kills the database. With swap, the overflow goes to disk and everything keeps running.',
@@ -840,6 +1152,11 @@ rm /tmp/shop.sql.gz
 
 # crontab -e: every night at 02:30
 30 2 * * * /usr/local/bin/backup.sh`,
+		links: [
+			['The 3-2-1 backup rule', 'https://www.backblaze.com/blog/the-3-2-1-backup-strategy/'],
+			['pg_dump (PostgreSQL)', 'https://www.postgresql.org/docs/current/backup-dump.html'],
+			['rclone', 'https://rclone.org/docs/']
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Without backups, a disk failure destroys all the data. With nightly off-site backups, a new server can be restored.',
@@ -919,6 +1236,10 @@ sudo du -h /var --max-depth=2 | sort -h | tail
 
 # cap Docker logs in /etc/docker/daemon.json
 { "log-opts": { "max-size": "10m", "max-file": "3" } }`,
+		links: [
+			['Docker log limits', 'https://docs.docker.com/engine/logging/drivers/json-file/'],
+			['Uptime Kuma', 'https://github.com/louislam/uptime-kuma']
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Logs slowly fill the disk until the database stops. With an outside monitor, you get an alert at 80 percent and fix it before anything breaks.',
@@ -999,6 +1320,10 @@ sudo du -h /var --max-depth=2 | sort -h | tail
       docker compose up -d &&
       curl -f http://127.0.0.1:3000/health
     '`,
+		links: [
+			['GitHub Actions', 'https://docs.github.com/en/actions'],
+			['docker compose up', 'https://docs.docker.com/reference/cli/docker/compose/up/']
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Manual deploys are risky. An automated pipeline tests, builds and deploys to the VPS, then checks health and rolls back on failure.',
@@ -1066,6 +1391,12 @@ sudo du -h /var --max-depth=2 | sort -h | tail
 			['Then scale out', 'add a second app server behind a load balancer.']
 		],
 		tip: 'Stay on one VPS until numbers say otherwise. The AWS page shows the next steps.',
+		links: [
+			[
+				'Common server setups (DigitalOcean)',
+				'https://www.digitalocean.com/community/tutorials/5-common-server-setups-for-your-web-application'
+			]
+		],
 		sketch: {
 			kind: 'Deployment diagram',
 			alt: 'One VPS grows: first a bigger plan, then a separate database, then two app servers behind a load balancer.',
