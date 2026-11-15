@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/Three-Bugs-Studio/3binfrastructure/compare/v0.2.0...v0.3.0) (2026-11-15)
+
+
+### Features
+
+* **architecture:** add topics from layers to microservices ([#3](https://github.com/Three-Bugs-Studio/3binfrastructure/issues/3)) ([f8e95e4](https://github.com/Three-Bugs-Studio/3binfrastructure/commit/f8e95e4a7aa763171e6bce2011b84b2147083e00))
+* easier, smoother demos and 72 new researched topics ([#5](https://github.com/Three-Bugs-Studio/3binfrastructure/issues/5)) ([3fcc6ed](https://github.com/Three-Bugs-Studio/3binfrastructure/commit/3fcc6edf0e31ccafd29e7dbc8a1bc0c2b817e190))
+
 ## [0.2.0](https://github.com/Three-Bugs-Studio/3binfrastructure/compare/v0.1.0...v0.2.0) (2026-10-31)
 
 
