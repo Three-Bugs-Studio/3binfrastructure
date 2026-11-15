@@ -21,6 +21,10 @@ export const devops: Topic[] = [
 			['Feedback', 'production data flows back and shapes what gets built next.']
 		],
 		tip: 'If a release feels scary, release more often and make each one smaller.',
+		links: [
+			['What is DevOps? (Microsoft)', 'https://learn.microsoft.com/en-us/devops/what-is-devops'],
+			['What is DevOps? (AWS)', 'https://aws.amazon.com/devops/what-is-devops/']
+		],
 		sketch: {
 			kind: 'Cycle diagram',
 			alt: 'A loop of plan, code, build, test, release, deploy, operate and monitor, then back to plan.',
@@ -303,6 +307,10 @@ jobs:
 			['Rollback', 'the old version must be one command away.']
 		],
 		tip: 'Never rebuild between environments, or you are not testing what you ship.',
+		links: [
+			['Continuous Delivery (Fowler)', 'https://martinfowler.com/bliki/ContinuousDelivery.html'],
+			['continuousdelivery.com', 'https://continuousdelivery.com/']
+		],
 		sketch: {
 			kind: 'Pipeline diagram',
 			alt: 'A build artifact goes to staging, then through an approval gate, then to production. If a smoke test fails, it rolls back.',
@@ -580,6 +588,7 @@ CMD ["node", "server.js"]`,
 				['Production', 'Real customers', 'Real data', 'Costs money and trust']
 			]
 		},
+		links: [['Dev/prod parity (12-factor)', 'https://12factor.net/dev-prod-parity']],
 		sketch: {
 			kind: 'Environment pipeline',
 			alt: 'A change moves from Dev to Test to Staging to Production. A bug is caught in Test and sent back to Dev.',
@@ -650,6 +659,7 @@ CMD ["node", "server.js"]`,
 			['Watching', 'someone stays on hand and checks dashboards after the release.']
 		],
 		tip: 'Avoid releasing late on a Friday. Release when the people who can fix it are awake and around.',
+		links: [['Deployment pipeline', 'https://martinfowler.com/bliki/DeploymentPipeline.html']],
 		sketch: {
 			kind: 'Process diagram',
 			alt: 'A pull request deploys to Dev, then QA tests it, the business signs off, it is released to Production, and the team watches the dashboards.',
@@ -724,6 +734,7 @@ LOG_LEVEL=debug
 DATABASE_URL=postgres://prod-db.internal/shop
 PAYMENT_KEY=(injected at deploy time)
 LOG_LEVEL=info`,
+		links: [['Config (12-factor)', 'https://12factor.net/config']],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'One image runs with Test config against the test database and with Production config against the production database. A wrong address sends Test traffic to the production database.',
@@ -796,6 +807,10 @@ LOG_LEVEL=info`,
 		],
 		tip: 'Run every migration against a production-sized copy in Staging. A change that takes a second on test data can lock a real table for an hour.',
 		skip: 'real customer data ends up on laptops and in less protected systems, where a leak is far more likely.',
+		links: [
+			['Evolutionary database design', 'https://martinfowler.com/articles/evodb.html'],
+			['Parallel change', 'https://martinfowler.com/bliki/ParallelChange.html']
+		],
 		sketch: {
 			kind: 'Skip vs set up',
 			alt: 'Copying production data straight into Test can leak it. Passing it through a masking step first gives realistic data that is safe.',
@@ -864,6 +879,7 @@ LOG_LEVEL=info`,
 			]
 		],
 		tip: 'Plan your rollback before you release, because you will not think clearly at 2am.',
+		links: [['Emergency response (SRE book)', 'https://sre.google/sre-book/emergency-response/']],
 		sketch: {
 			kind: 'Git flow diagram',
 			alt: 'Production breaks and is rolled back. A hotfix branch goes through fast tests to Production, then merges back to main.',
@@ -1052,6 +1068,86 @@ LOG_LEVEL=info`,
 		}
 	},
 	{
+		id: 'feature-flags',
+		title: 'Feature flags',
+		summary:
+			'A feature flag is an if-statement whose answer comes from configuration instead of code. Deploying code and releasing a feature become two separate decisions, so you can ship it switched off, open it to a few users, and turn it off again in seconds.',
+		points: [
+			['Release flag', 'hides unfinished work on main. Remove it soon after launch.'],
+			['Ops flag', 'a kill switch for a heavy feature during an incident.'],
+			['Experiment flag', 'splits users into groups for an A/B test.'],
+			['Permission flag', 'opens a feature to beta users or one plan. It can live for years.'],
+			['The cost', 'every flag adds a path to test. Old flags are debt.']
+		],
+		tip: 'When you add a flag, add the ticket that removes it.',
+		code: `if (flags.isEnabled('new-checkout', { userId })) {
+  return newCheckout(cart);
+}
+return oldCheckout(cart);`,
+		links: [
+			['Feature toggles (Fowler)', 'https://martinfowler.com/articles/feature-toggles.html'],
+			['OpenFeature', 'https://openfeature.dev/docs/reference/intro']
+		],
+		sketch: {
+			kind: 'Traffic diagram',
+			alt: 'Code asks a flag service which checkout to use. The flag opens the new checkout to staff, then 10% of users, is switched off when a bug appears, and is removed after launch.',
+			h: 200,
+			nodes: [
+				{ id: 'user', label: 'Users', x: 30, y: 125, shape: 'person' },
+				{ id: 'flag', label: 'Flags\nnew: off', x: 170, y: 36, w: 120, h: 56, fill: 'sky' },
+				{ id: 'code', label: 'if flag on?', x: 170, y: 140, w: 120, h: 56, fill: 'yellow' },
+				{ id: 'old', label: 'Old checkout', x: 390, y: 60, w: 140, h: 52, fill: 'mint' },
+				{ id: 'new', label: 'New checkout', x: 390, y: 150, w: 140, h: 52, fill: 'pink' }
+			],
+			edges: [
+				{ from: 'user', to: 'code' },
+				{ from: 'flag', to: 'code', dashed: true },
+				{ from: 'code', to: 'old' },
+				{ from: 'code', to: 'new' }
+			],
+			steps: [
+				{
+					say: 'The new checkout is merged and deployed, but its flag is off. Everyone still gets the old one.',
+					send: [
+						['user', 'code'],
+						['code', 'old']
+					],
+					light: ['flag']
+				},
+				{
+					say: 'Turn it on for staff only. No deploy, just a change in the flag service.',
+					set: { flag: 'Flags\nnew: staff' },
+					send: [
+						['flag', 'code'],
+						['code', 'new']
+					],
+					light: ['new']
+				},
+				{
+					say: 'Then 10% of customers. Errors stay low, so keep going.',
+					set: { flag: 'Flags\nnew: 10%' },
+					send: [
+						['code', 'old'],
+						['code', 'new']
+					]
+				},
+				{
+					say: 'At 50% a bug shows up. Flip the flag off, and users are back on the old path in seconds.',
+					set: { flag: 'Flags\nnew: off' },
+					send: [['code', 'old']],
+					down: ['new']
+				},
+				{
+					say: 'After the fix and a full launch, delete the flag and the old code, or they pile up.',
+					set: { flag: 'Flag\nremoved', code: 'New code only' },
+					hide: ['old'],
+					send: [['code', 'new']],
+					light: ['code']
+				}
+			]
+		}
+	},
+	{
 		id: 'observability',
 		part: OPERATE,
 		title: 'Observability',
@@ -1195,6 +1291,10 @@ LOG_LEVEL=info`,
 			['Blameless review', 'ask how the system allowed it, not who did it.']
 		],
 		tip: 'Roll back first and investigate after. Users do not care why it is broken.',
+		links: [
+			['Managing incidents (SRE book)', 'https://sre.google/sre-book/managing-incidents/'],
+			['Postmortem culture (SRE book)', 'https://sre.google/sre-book/postmortem-culture/']
+		],
 		sketch: {
 			kind: 'Process diagram',
 			alt: 'An incident moves through detect, triage, mitigate and review, and the lessons feed back into the system.',
@@ -1297,6 +1397,88 @@ LOG_LEVEL=info`,
 					say: 'Only what passes every check reaches production.',
 					send: [['img', 'prod']],
 					light: ['prod']
+				}
+			]
+		}
+	},
+	{
+		id: 'slo-alerts',
+		title: 'Alerting on SLOs',
+		summary:
+			'An alert should wake someone only when users are hurt badly enough to matter. Alerting on how fast the error budget is burning does exactly that: a fast burn pages a person, and a slow burn becomes a ticket for working hours.',
+		points: [
+			[
+				'Burn rate',
+				'how fast you spend the budget. A rate of 1 spends it exactly by the end of the window.'
+			],
+			['Fast burn', 'a rate of 14.4 for one hour spends 2% of a 30-day budget. Page now.'],
+			['Slow burn', 'a rate of 1 for three days spends 10%. Open a ticket.'],
+			[
+				'Two windows',
+				'each alert checks a long and a short window, so it clears soon after the errors stop.'
+			]
+		],
+		tip: 'If a page needs no action from a human, delete it or turn it into a ticket.',
+		table: {
+			head: ['Alert', 'Long window', 'Short window', 'Burn rate', 'Budget spent'],
+			rows: [
+				['Page', '1 hour', '5 minutes', '14.4', '2%'],
+				['Page', '6 hours', '30 minutes', '6', '5%'],
+				['Ticket', '3 days', '6 hours', '1', '10%']
+			]
+		},
+		links: [
+			['Alerting on SLOs (SRE workbook)', 'https://sre.google/workbook/alerting-on-slos/'],
+			['Implementing SLOs (SRE workbook)', 'https://sre.google/workbook/implementing-slos/']
+		],
+		sketch: {
+			kind: 'Alerting flow',
+			alt: 'With a 99.9% SLO, the error rate sets a burn rate. A fast burn pages the on-call engineer, and a slow burn opens a ticket.',
+			h: 200,
+			nodes: [
+				{ id: 'err', label: 'Error rate\n0.05%', x: 75, y: 100, w: 120, h: 62, fill: 'sky' },
+				{ id: 'burn', label: 'Burn rate\n0.5', x: 240, y: 100, w: 120, h: 62, fill: 'yellow' },
+				{ id: 'page', label: 'Page on-call', x: 400, y: 45, w: 130, h: 52, fill: 'pink' },
+				{ id: 'ticket', label: 'Ticket', x: 400, y: 155, w: 130, h: 52, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'err', to: 'burn' },
+				{ from: 'burn', to: 'page', label: 'fast' },
+				{ from: 'burn', to: 'ticket', label: 'slow' }
+			],
+			steps: [
+				{
+					say: 'The SLO is 99.9%, so 0.1% of requests may fail. Today 0.05% fail: the budget burns at half speed.',
+					send: [['err', 'burn']],
+					light: ['burn']
+				},
+				{
+					say: 'A bad deploy: 1.5% of requests fail. That burns the budget 15 times faster than allowed.',
+					set: { err: 'Error rate\n1.5%', burn: 'Burn rate\n15' },
+					send: [['err', 'burn']],
+					light: ['err']
+				},
+				{
+					say: 'It stays high over both the hour and the last five minutes, so on-call is paged.',
+					set: { err: 'Error rate\n1.5%', burn: 'Burn rate\n15' },
+					send: [['burn', 'page']],
+					light: ['page']
+				},
+				{
+					say: 'Rollback. The short window clears within minutes, and the page resolves itself.',
+					down: ['page'],
+					light: ['burn']
+				},
+				{
+					say: 'Later a small leak: 0.1% errors, day after day. A burn rate of 1 is too slow to page anyone.',
+					set: { err: 'Error rate\n0.1%', burn: 'Burn rate\n1' },
+					send: [['err', 'burn']]
+				},
+				{
+					say: 'After three days it has spent 10% of the budget, so it opens a ticket for working hours.',
+					set: { err: 'Error rate\n0.1%', burn: 'Burn rate\n1' },
+					send: [['burn', 'ticket']],
+					light: ['ticket']
 				}
 			]
 		}

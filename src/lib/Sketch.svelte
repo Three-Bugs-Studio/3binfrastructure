@@ -7,6 +7,8 @@
 		type Sketch,
 		type SketchNode
 	} from '#lib/sketch.js';
+	import { prefersReducedMotion } from 'svelte/motion';
+	import { fade } from 'svelte/transition';
 
 	let { sketch, step, flight = 1 }: { sketch: Sketch; step?: DemoStep; flight?: number } = $props();
 
@@ -14,6 +16,15 @@
 	const node = (id: string) => sketch.nodes.find((n) => n.id === id)!;
 	const nodes = $derived(sketch.nodes.filter((n) => shown(n.id)));
 	const edges = $derived(sketch.edges.filter((e) => shown(e.from) && shown(e.to)));
+
+	// the wire a dot rides on turns red, whichever way the dot travels
+	const busy = (from: string, to: string) =>
+		!!step?.send?.some(([a, b]) => (a === from && b === to) || (a === to && b === from));
+	const appear = $derived({ duration: prefersReducedMotion.current ? 0 : 350 });
+
+	// a rounded box as one path, so the red pen can draw it with pathLength
+	const ring = (x: number, y: number, w: number, h: number, r = 12) =>
+		`M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}`;
 
 	const fill = (n: SketchNode) => (n.fill ? `var(--${n.fill})` : 'var(--card)');
 
@@ -31,7 +42,7 @@
 			{@const { w, h } = size(n)}
 			{@const left = n.x - w / 2}
 			{@const top = n.y - h / 2}
-			<g class:off={step?.down?.includes(n.id)}>
+			<g class="node" class:off={step?.down?.includes(n.id)} in:fade={appear}>
 				{#if n.shape === 'db'}
 					<path
 						fill={fill(n)}
@@ -58,8 +69,10 @@
 
 		{#each edges as e (e.from + e.to)}
 			{@const path = edgePath(node(e.from), node(e.to))}
-			<path fill="none" d={path.line} stroke-dasharray={e.dashed ? '7 7' : undefined} />
-			{#if !e.plain}<path fill="none" d={path.head} />{/if}
+			<g class="wire" class:busy={busy(e.from, e.to)} in:fade={appear}>
+				<path fill="none" d={path.line} stroke-dasharray={e.dashed ? '7 7' : undefined} />
+				{#if !e.plain}<path fill="none" d={path.head} />{/if}
+			</g>
 		{/each}
 
 		{#each nodes as n (n.id)}
@@ -67,11 +80,12 @@
 			{@const left = n.x - w / 2}
 			{@const top = n.y - h / 2}
 			{#if step?.light?.includes(n.id)}
-				<rect class="mark" x={left - 5} y={top - 5} width={w + 10} height={h + 10} rx="12" />
+				<path class="mark draw" pathLength="1" d={ring(left - 5, top - 5, w + 10, h + 10)} />
 			{/if}
 			{#if step?.down?.includes(n.id)}
 				<path
-					class="mark"
+					class="mark draw"
+					pathLength="1"
 					d="M{left} {top}L{left + w} {top + h}M{left + w} {top}L{left} {top + h}"
 				/>
 			{/if}
@@ -80,7 +94,7 @@
 
 	{#each nodes as n (n.id)}
 		{@const lines = (step?.set?.[n.id] ?? n.label).split('\n')}
-		<text class:caption={n.shape === 'text' || n.shape === 'boundary'}>
+		<text class:caption={n.shape === 'text' || n.shape === 'boundary'} in:fade={appear}>
 			{#each lines as line, i (i)}
 				<tspan x={n.x} y={labelY(n, i, lines.length)}>{line}</tspan>
 			{/each}
@@ -96,7 +110,12 @@
 
 	{#if flight < 1}
 		{#each step?.send ?? [] as [from, to], i (i)}
-			{@const dot = edgePath(node(from), node(to)).point(flight)}
+			{@const path = edgePath(node(from), node(to))}
+			{#each [0.12, 0.06] as lag, t (t)}
+				{@const tail = path.point(Math.max(0, flight - lag))}
+				<circle class="trail" cx={tail.x} cy={tail.y} r={3 + t * 1.5} />
+			{/each}
+			{@const dot = path.point(flight)}
 			<circle class="packet" cx={dot.x} cy={dot.y} r="7" />
 		{/each}
 	{/if}
@@ -118,8 +137,52 @@
 		filter: url(#sketch);
 	}
 
+	.node {
+		transition: opacity 0.4s;
+	}
+
 	.off {
 		opacity: 0.35;
+	}
+
+	.wire path {
+		transition: stroke 0.3s;
+	}
+
+	.busy path {
+		stroke: var(--red);
+		stroke-width: 3;
+	}
+
+	/* the red pen draws each mark instead of it popping in */
+	.draw {
+		stroke-dasharray: 1;
+		animation: pen 0.5s ease-out both;
+	}
+
+	@keyframes pen {
+		from {
+			stroke-dashoffset: 1;
+		}
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+
+	.trail {
+		fill: var(--red);
+		opacity: 0.35;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.node,
+		.wire path {
+			transition: none;
+		}
+
+		.draw {
+			animation: none;
+		}
 	}
 
 	.mark {

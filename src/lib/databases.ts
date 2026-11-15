@@ -21,6 +21,13 @@ export const databases: Topic[] = [
 FROM customers c
 LEFT JOIN orders o ON o.customer_id = c.id
 GROUP BY c.id, c.name;`,
+		links: [
+			['PostgreSQL: constraints', 'https://www.postgresql.org/docs/current/ddl-constraints.html'],
+			[
+				'PostgreSQL: joins between tables',
+				'https://www.postgresql.org/docs/current/tutorial-join.html'
+			]
+		],
 		sketch: {
 			kind: 'Entity relationship diagram',
 			steps: [
@@ -85,6 +92,7 @@ GROUP BY c.id, c.name;`,
 			]
 		],
 		tip: 'Every column should depend on the key, the whole key, and nothing but the key.',
+		links: [['Database normalization', 'https://en.wikipedia.org/wiki/Database_normalization']],
 		sketch: {
 			kind: 'Schema diagram',
 			steps: [
@@ -172,6 +180,13 @@ GROUP BY c.id, c.name;`,
 UPDATE accounts SET balance = balance - 100 WHERE id = 1;
 UPDATE accounts SET balance = balance + 100 WHERE id = 2;
 COMMIT;`,
+		links: [
+			[
+				'PostgreSQL: transactions',
+				'https://www.postgresql.org/docs/current/tutorial-transactions.html'
+			],
+			['PostgreSQL: write-ahead logging', 'https://www.postgresql.org/docs/current/wal-intro.html']
+		],
 		sketch: {
 			kind: 'Flowchart',
 			steps: [
@@ -243,6 +258,16 @@ COMMIT;`,
 			]
 		],
 		tip: "Check your database's default level and what it actually guarantees. Do not assume the textbook table.",
+		links: [
+			[
+				'PostgreSQL: transaction isolation',
+				'https://www.postgresql.org/docs/current/transaction-iso.html'
+			],
+			[
+				'MySQL: InnoDB isolation levels',
+				'https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html'
+			]
+		],
 		sketch: {
 			kind: 'Sequence diagram',
 			alt: 'Transaction 1 reads a row as 100. Transaction 2 changes it to 200 and commits. Transaction 1 reads again and sees 200.',
@@ -307,6 +332,202 @@ COMMIT;`,
 		}
 	},
 	{
+		id: 'mvcc',
+		title: 'Locks and MVCC',
+		summary:
+			'Two transactions touching the same data must not corrupt it. Locks make one wait for the other. MVCC, multi-version concurrency control, keeps old versions of each row, so readers see a stable snapshot and never wait for writers.',
+		points: [
+			[
+				'Row versions',
+				'an UPDATE writes a new version of the row. The old one stays until no transaction can still see it.'
+			],
+			[
+				'Snapshot',
+				'a query reads only the row versions that were committed when its snapshot was taken.'
+			],
+			[
+				'Writers still lock',
+				'two updates to the same row queue up. SELECT ... FOR UPDATE takes that row lock early.'
+			],
+			[
+				'Deadlock',
+				'two transactions each wait for the other. PostgreSQL detects it and aborts one, so be ready to retry.'
+			],
+			[
+				'VACUUM',
+				'removes old row versions that nobody can see any more. Autovacuum does it in the background.'
+			]
+		],
+		tip: 'Lock rows in the same order everywhere, and most deadlocks never happen.',
+		code: `BEGIN;
+SELECT balance FROM accounts WHERE id = 1 FOR UPDATE;  -- lock the row
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+COMMIT;                                                -- lock released`,
+		links: [
+			['PostgreSQL: MVCC introduction', 'https://www.postgresql.org/docs/current/mvcc-intro.html'],
+			[
+				'PostgreSQL: explicit locking',
+				'https://www.postgresql.org/docs/current/explicit-locking.html'
+			],
+			[
+				'PostgreSQL: routine vacuuming',
+				'https://www.postgresql.org/docs/current/routine-vacuuming.html'
+			]
+		],
+		sketch: {
+			kind: 'Concurrency diagram',
+			alt: 'A writer creates a new version of a row while a reader keeps reading the old version from its snapshot. A second writer waits for the row lock, and VACUUM later removes the old version.',
+			h: 190,
+			nodes: [
+				{ id: 'r', label: 'Reader\nsnapshot', x: 70, y: 45, w: 120, h: 60, fill: 'sky' },
+				{ id: 'w', label: 'Writer 1', x: 70, y: 150, w: 120, h: 60, fill: 'mint' },
+				{ id: 'v1', label: 'Row v1\nbalance 100', x: 270, y: 45, w: 130, h: 60, fill: 'yellow' },
+				{ id: 'v2', label: 'Row v2\nbalance 50', x: 270, y: 150, w: 130, h: 60, fill: 'pink' },
+				{ id: 'w2', label: 'Writer 2', x: 425, y: 150, w: 100, h: 60, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'r', to: 'v1', label: 'reads' },
+				{ from: 'w', to: 'v2', label: 'writes' },
+				{ from: 'w2', to: 'v2', dashed: true }
+			],
+			steps: [
+				{
+					say: 'Version 1 of the row says the balance is 100.',
+					hide: ['v2', 'w2'],
+					light: ['v1']
+				},
+				{
+					say: 'Writer 1 updates it to 50. That creates version 2, not yet committed.',
+					hide: ['w2'],
+					send: [['w', 'v2']],
+					light: ['v2']
+				},
+				{
+					say: 'A reader at the same moment is not blocked. Its snapshot still shows version 1.',
+					hide: ['w2'],
+					send: [['r', 'v1']],
+					light: ['r']
+				},
+				{
+					say: 'Writer 2 wants the same row. Writers do lock, so it waits for Writer 1 to commit.',
+					send: [['w2', 'v2']],
+					set: { w2: 'Writer 2\nwaiting' },
+					light: ['w2']
+				},
+				{
+					say: 'Writer 1 commits and Writer 2 goes ahead. Once no snapshot needs version 1, VACUUM removes it.',
+					set: { w2: 'Writer 2\nruns' },
+					down: ['v1']
+				}
+			]
+		}
+	},
+	{
+		id: 'backups',
+		title: 'Backups and point-in-time recovery',
+		summary:
+			'Replication copies a mistake as fast as it copies good data. A backup lets you go back. With a base backup plus an archive of the write-ahead log, PostgreSQL can replay history up to any moment you choose.',
+		points: [
+			[
+				'Logical dump',
+				'pg_dump writes out one database as SQL or an archive. Simple and portable, but it restores only to the moment it ran.'
+			],
+			['Base backup', 'pg_basebackup copies the whole cluster while it keeps running.'],
+			[
+				'WAL archive',
+				'with archive_mode on, archive_command copies every finished WAL file somewhere safe.'
+			],
+			[
+				'Point in time',
+				'restore the base backup, then replay WAL up to recovery_target_time, just before the mistake.'
+			],
+			['Test restores', 'a backup you have never restored is only a hope.']
+		],
+		tip: 'Time a full restore. That number, not the backup schedule, decides how long you are down.',
+		skip: 'With only a nightly dump, a bad DELETE in the afternoon costs you every change since the night before.',
+		code: `# postgresql.conf
+archive_mode = on
+archive_command = 'test ! -f /backup/wal/%f && cp %p /backup/wal/%f'
+
+# to recover: restore the base backup, then set
+restore_command = 'cp /backup/wal/%f %p'
+recovery_target_time = '2026-11-15 14:59:00'
+# create an empty recovery.signal file and start the server`,
+		links: [
+			[
+				'PostgreSQL: continuous archiving and PITR',
+				'https://www.postgresql.org/docs/current/continuous-archiving.html'
+			],
+			['PostgreSQL: backup and restore', 'https://www.postgresql.org/docs/current/backup.html']
+		],
+		sketch: {
+			kind: 'Timeline',
+			alt: 'A base backup at 02:00 and an archive of every WAL file let a new server be restored and replayed up to 14:59, one minute before a bad DELETE at 15:00.',
+			h: 205,
+			nodes: [
+				{ id: 'bb', label: 'Base backup\n02:00', x: 70, y: 50, w: 120, h: 60, fill: 'sky' },
+				{
+					id: 'wal',
+					label: 'WAL archive\n02:00 to now',
+					x: 240,
+					y: 50,
+					w: 140,
+					h: 60,
+					fill: 'yellow'
+				},
+				{ id: 'bad', label: 'DELETE oops\n15:00', x: 405, y: 50, w: 130, h: 60, fill: 'pink' },
+				{
+					id: 'db',
+					label: 'Restored\ndatabase',
+					x: 240,
+					y: 160,
+					w: 120,
+					h: 70,
+					shape: 'db',
+					fill: 'mint'
+				}
+			],
+			edges: [
+				{ from: 'bb', to: 'wal', plain: true },
+				{ from: 'wal', to: 'bad', plain: true },
+				{ from: 'bb', to: 'db', label: 'restore' },
+				{ from: 'wal', to: 'db', label: 'replay' }
+			],
+			steps: [
+				{
+					say: 'At 02:00 a base backup copies the whole database.',
+					hide: ['db'],
+					light: ['bb']
+				},
+				{
+					say: 'All day long, every finished WAL file is copied to the archive.',
+					hide: ['db'],
+					send: [['bb', 'wal']],
+					light: ['wal']
+				},
+				{
+					say: 'At 15:00 someone runs DELETE without a WHERE. The replicas copy it at once.',
+					hide: ['db'],
+					send: [['wal', 'bad']],
+					light: ['bad']
+				},
+				{
+					say: 'Restore the base backup onto a fresh server.',
+					send: [['bb', 'db']],
+					set: { db: 'Restored\n02:00' },
+					light: ['db']
+				},
+				{
+					say: 'Replay the WAL up to 14:59, one minute before the mistake, and stop there.',
+					send: [['wal', 'db']],
+					set: { db: 'Restored\n14:59' },
+					down: ['bad'],
+					light: ['db']
+				}
+			]
+		}
+	},
+	{
 		id: 'indexes',
 		part: 'Speed and scale',
 		title: 'Indexes',
@@ -323,6 +544,10 @@ COMMIT;`,
 		],
 		tip: 'Run EXPLAIN on a slow query before adding an index, and again afterwards to prove it gets used.',
 		code: `CREATE INDEX idx_orders_customer ON orders (customer_id);`,
+		links: [
+			['Use The Index, Luke: anatomy of an index', 'https://use-the-index-luke.com/sql/anatomy'],
+			['PostgreSQL: index types', 'https://www.postgresql.org/docs/current/indexes-types.html']
+		],
 		sketch: {
 			kind: 'Tree diagram',
 			steps: [
@@ -362,6 +587,175 @@ COMMIT;`,
 		}
 	},
 	{
+		id: 'explain',
+		title: 'Query plans and EXPLAIN',
+		summary:
+			'SQL says what you want, not how to get it. The planner chooses how, such as reading the whole table or jumping through an index, using statistics about your data. EXPLAIN shows you the plan it picked.',
+		points: [
+			['EXPLAIN', 'shows the chosen plan with estimated costs and row counts, without running it.'],
+			[
+				'EXPLAIN ANALYZE',
+				'really runs the query and adds the actual times and rows. Careful with UPDATE and DELETE.'
+			],
+			[
+				'Seq Scan or Index Scan',
+				'read every row, or follow an index. When most rows match, the full scan can be cheaper.'
+			],
+			[
+				'Statistics',
+				'ANALYZE samples each table. Stale numbers lead to bad plans, so watch for big gaps between estimated and actual rows.'
+			]
+		],
+		tip: 'Wrap EXPLAIN ANALYZE of a write in BEGIN and ROLLBACK, so the test changes nothing.',
+		code: `EXPLAIN ANALYZE
+SELECT * FROM orders WHERE customer_id = 42;
+
+-- no index:   Seq Scan on orders
+-- with index: Index Scan using idx_orders_customer on orders`,
+		links: [
+			['PostgreSQL: using EXPLAIN', 'https://www.postgresql.org/docs/current/using-explain.html'],
+			['Use The Index, Luke: execution plans', 'https://use-the-index-luke.com/sql/explain-plan']
+		],
+		sketch: {
+			kind: 'Query plan',
+			alt: 'The planner reads table statistics and compares two plans for a query: a sequential scan with a high estimated cost, and an index scan with a low one. It picks the index scan.',
+			h: 200,
+			nodes: [
+				{ id: 'q', label: 'Query\ncustomer 42', x: 75, y: 50, w: 130, h: 66, fill: 'sky' },
+				{ id: 'p', label: 'Planner', x: 240, y: 50, w: 110, h: 66, fill: 'yellow' },
+				{ id: 'st', label: 'Statistics', x: 240, y: 150, w: 110, h: 50, fill: 'mint' },
+				{ id: 'seq', label: 'Seq Scan\ncost 18000', x: 405, y: 50, w: 130, h: 60, fill: 'pink' },
+				{ id: 'idx', label: 'Index Scan\ncost 8', x: 405, y: 150, w: 130, h: 60, fill: 'mint' }
+			],
+			edges: [
+				{ from: 'q', to: 'p' },
+				{ from: 'st', to: 'p' },
+				{ from: 'p', to: 'seq', dashed: true },
+				{ from: 'p', to: 'idx', dashed: true }
+			],
+			steps: [
+				{
+					say: 'A query arrives. It says which rows it wants, not how to find them.',
+					send: [['q', 'p']],
+					light: ['p']
+				},
+				{
+					say: 'The planner checks the statistics: about 12 of a million rows match.',
+					send: [['st', 'p']],
+					light: ['st']
+				},
+				{
+					say: 'Plan A reads every row in the table. Its estimated cost is high.',
+					send: [['p', 'seq']],
+					light: ['seq']
+				},
+				{
+					say: 'Plan B follows the index on customer_id. Its estimated cost is tiny.',
+					send: [['p', 'idx']],
+					light: ['idx'],
+					down: ['seq']
+				},
+				{
+					say: 'EXPLAIN shows the winner. EXPLAIN ANALYZE also runs it and reports the real time.',
+					set: { idx: 'Index Scan\n0.09 ms' },
+					light: ['idx'],
+					down: ['seq']
+				}
+			]
+		}
+	},
+	{
+		id: 'pooling',
+		title: 'Connection pooling',
+		summary:
+			'Opening a database connection is slow, and in PostgreSQL each one is a whole server process with its own memory. A pool keeps a few connections open and lends them out, so thousands of requests share a few dozen connections.',
+		points: [
+			[
+				'Cost per connection',
+				'PostgreSQL starts a backend process for each one. max_connections is 100 by default.'
+			],
+			['App-side pool', 'most drivers and frameworks keep a pool inside each app process.'],
+			['PgBouncer', 'a separate pooler that many app servers can share.'],
+			[
+				'Transaction pooling',
+				'a connection is lent for one transaction only. Very efficient, but session features such as SET and LISTEN break.'
+			],
+			[
+				'Pool size',
+				'more is not faster. Past a point, extra connections only fight over CPU and locks.'
+			]
+		],
+		tip: 'Add up connections across every app instance. Ten servers with a pool of 20 each is already 200.',
+		links: [
+			['PgBouncer features', 'https://www.pgbouncer.org/features.html'],
+			[
+				'PostgreSQL: connection settings',
+				'https://www.postgresql.org/docs/current/runtime-config-connection.html'
+			]
+		],
+		sketch: {
+			kind: 'Deployment diagram',
+			alt: 'Three requests share a pool of two open connections to PostgreSQL. The third request waits briefly, then reuses a connection the first one returned.',
+			h: 200,
+			nodes: [
+				{ id: 'a1', label: 'Request 1', x: 60, y: 35, w: 96, h: 46, fill: 'sky' },
+				{ id: 'a2', label: 'Request 2', x: 60, y: 100, w: 96, h: 46, fill: 'sky' },
+				{ id: 'a3', label: 'Request 3', x: 60, y: 165, w: 96, h: 46, fill: 'sky' },
+				{ id: 'pool', label: 'Pool\n2 free', x: 240, y: 100, w: 120, h: 66, fill: 'yellow' },
+				{
+					id: 'db',
+					label: 'PostgreSQL',
+					x: 410,
+					y: 100,
+					w: 110,
+					h: 80,
+					shape: 'db',
+					fill: 'mint'
+				}
+			],
+			edges: [
+				{ from: 'a1', to: 'pool' },
+				{ from: 'a2', to: 'pool' },
+				{ from: 'a3', to: 'pool' },
+				{ from: 'pool', to: 'db', label: '2 connections' }
+			],
+			steps: [
+				{
+					say: 'The pool holds two open connections to PostgreSQL, ready to lend.',
+					light: ['pool']
+				},
+				{
+					say: 'Request 1 borrows one and runs its transaction.',
+					send: [
+						['a1', 'pool'],
+						['pool', 'db']
+					],
+					set: { pool: 'Pool\n1 free' }
+				},
+				{
+					say: 'Request 2 borrows the other at the same time.',
+					send: [
+						['a2', 'pool'],
+						['pool', 'db']
+					],
+					set: { pool: 'Pool\n0 free' }
+				},
+				{
+					say: 'Request 3 waits a moment in the queue instead of opening a new connection.',
+					send: [['a3', 'pool']],
+					set: { pool: 'Pool\n0 free', a3: 'Request 3\nqueued' },
+					light: ['a3']
+				},
+				{
+					say: 'Request 1 finishes, and its connection goes straight to request 3. The database still sees only two.',
+					send: [['pool', 'db']],
+					set: { pool: 'Pool\n0 free', a1: 'Request 1\ndone', a3: 'Request 3\nserved' },
+					light: ['db']
+				}
+			]
+		}
+	},
+	{
 		id: 'replication',
 		title: 'Replication',
 		summary:
@@ -379,6 +773,12 @@ COMMIT;`,
 			]
 		],
 		tip: 'Replication protects you from a dead server, not from a bad DELETE. You still need backups.',
+		links: [
+			[
+				'PostgreSQL: standby servers and replication',
+				'https://www.postgresql.org/docs/current/warm-standby.html'
+			]
+		],
 		sketch: {
 			kind: 'Deployment diagram',
 			steps: [
@@ -435,6 +835,12 @@ COMMIT;`,
 			['The cost', 'joins and transactions across shards become slow or hard.']
 		],
 		tip: 'Sharding is a last resort. Try indexes, caching, read replicas and a bigger machine first.',
+		links: [
+			[
+				'PostgreSQL: table partitioning',
+				'https://www.postgresql.org/docs/current/ddl-partitioning.html'
+			]
+		],
 		sketch: {
 			kind: 'Data flow diagram',
 			steps: [
@@ -523,6 +929,10 @@ COMMIT;`,
 			['PACELC', 'even with no partition, you still trade latency against consistency.']
 		],
 		tip: 'You do not really pick two of three. Partitions are not optional, so the choice is C or A when one happens.',
+		links: [
+			['CAP theorem', 'https://en.wikipedia.org/wiki/CAP_theorem'],
+			['PACELC', 'https://en.wikipedia.org/wiki/PACELC_design_principle']
+		],
 		sketch: {
 			kind: 'Failure scenario',
 			alt: 'Two database nodes replicate to each other. When the network between them breaks, node B must either refuse a read or return old data.',
@@ -577,6 +987,10 @@ COMMIT;`,
 			['Graph', 'Neo4j. Relationships come first, for networks and recommendations.']
 		],
 		tip: 'Default to a relational database such as PostgreSQL. Reach for NoSQL when you can name the limit you are hitting.',
+		links: [
+			['Redis data types', 'https://redis.io/docs/latest/develop/data-types/'],
+			['MongoDB introduction', 'https://www.mongodb.com/docs/manual/introduction/']
+		],
 		sketch: {
 			kind: 'Comparison',
 			alt: 'An app chooses between four NoSQL families: key-value, document, wide-column and graph.',

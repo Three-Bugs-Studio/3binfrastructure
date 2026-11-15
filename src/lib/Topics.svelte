@@ -20,7 +20,7 @@
 	{intro}
 	{#if source}Based on <a href={source.url} rel="external noopener">{source.label}</a>, rewritten in
 		our own words.{/if}
-	Press play on any sketch to watch it happen.
+	Press play on any sketch to watch it happen, or click a sketch and use the arrow keys.
 </p>
 
 <nav class="chips" aria-label="On this page">
