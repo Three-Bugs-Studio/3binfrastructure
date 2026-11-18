@@ -43,9 +43,8 @@
 				</ul>
 				{#if topic.code}<pre><code>{topic.code}</code></pre>{/if}
 			</div>
-			<div class="side">
-				<Demo sketch={topic.sketch} />
-				{#if topic.table}
+			{#if topic.table}
+				<div class="side">
 					<table>
 						<thead>
 							<tr>
@@ -63,9 +62,10 @@
 							{/each}
 						</tbody>
 					</table>
-				{/if}
-			</div>
+				</div>
+			{/if}
 		</div>
+		<Demo sketch={topic.sketch} />
 		{#if topic.skip}<p class="note warn"><strong>If you skip this:</strong> {topic.skip}</p>{/if}
 		<p class="note"><strong>Rule of thumb:</strong> {topic.tip}</p>
 		{#if topic.links}
@@ -109,10 +109,12 @@
 		rotate: -6deg;
 	}
 
+	/* the text spreads full width when there is no table beside it */
 	.columns {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
 		gap: 2.5rem;
+		margin-bottom: 1.25rem;
 	}
 
 	.columns p {
@@ -152,7 +154,6 @@
 
 	table {
 		width: 100%;
-		margin-top: 1.25rem;
 		border-collapse: collapse;
 		font-size: 1rem;
 	}
@@ -187,7 +188,6 @@
 
 	@media (max-width: 52rem) {
 		.columns {
-			grid-template-columns: minmax(0, 1fr);
 			gap: 1.25rem;
 		}
 

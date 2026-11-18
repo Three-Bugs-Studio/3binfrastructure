@@ -55,24 +55,36 @@ export const computing: Subject[] = [
 					],
 					steps: [
 						{
+							title: 'Read the top bit',
 							say: 'Read 1101 from the left. The 8s bit is on.',
+							detail:
+								'Each place in a binary number is worth twice the one to its right, so in a 4-bit number the leftmost place is worth 2³ = 8. A 1 adds its place value to the total and a 0 adds nothing. This leftmost bit is called the most significant bit, because it carries the most weight.',
 							set: { b3: '8s\n1', sum: 'Total = 8' },
 							send: [['b3', 'sum']],
 							light: ['b3']
 						},
 						{
+							title: 'Add the 4s place',
 							say: 'The 4s bit is on as well: 8 + 4 = 12.',
+							detail:
+								'The running total grows by the value of each place that holds a 1. It is the same as reading 4,213 in decimal as 4 thousands, 2 hundreds, 1 ten and 3 ones, only with powers of two instead of powers of ten.',
 							set: { b3: '8s\n1', b2: '4s\n1', sum: 'Total = 12' },
 							send: [['b2', 'sum']],
 							light: ['b2']
 						},
 						{
+							title: 'Skip the zero bit',
 							say: 'The 2s bit is off, so it adds nothing.',
+							detail:
+								'A 0 still matters, even though it adds nothing. It holds the place so the bits to its right keep their values. Drop it and you would read 111, which is 7, not 13.',
 							set: { b3: '8s\n1', b2: '4s\n1', b1: '2s\n0', sum: 'Total = 12' },
 							down: ['b1']
 						},
 						{
+							title: 'Total it up',
 							say: 'The 1s bit is on: 12 + 1 = 13. So 1101 in binary is 13.',
+							detail:
+								'A quick check is hexadecimal: each group of 4 bits is one hex digit, so 1101 is D, which is 13. With 4 bits you can count from 0 up to 15, which is 2⁴ - 1. Add a fifth bit and the range doubles to 0 to 31.',
 							set: { b3: '8s\n1', b2: '4s\n1', b1: '2s\n0', b0: '1s\n1', sum: 'Total = 13' },
 							send: [['b0', 'sum']],
 							light: ['sum']
@@ -131,14 +143,20 @@ export const computing: Subject[] = [
 					],
 					steps: [
 						{
+							title: 'Both inputs off',
 							say: '0 + 0: nothing is on, so both outputs stay 0.',
+							detail:
+								'A gate is a few transistors that switch an output on or off depending on its inputs. XOR outputs 1 only when its inputs differ, and AND only when both are 1. With both inputs at 0 neither condition holds, so Sum and Carry are both 0.',
 							send: [
 								['a', 'x'],
 								['b', 'n']
 							]
 						},
 						{
+							title: 'One input on',
 							say: '1 + 0: the inputs differ, so XOR gives Sum = 1. AND stays 0.',
+							detail:
+								'A is 1 and B is 0, so the inputs differ and XOR switches on. AND needs both inputs on, so the carry stays 0. Read as Carry then Sum, the outputs are 01 in binary, which is 1.',
 							set: { a: 'A = 1', s: 'Sum = 1' },
 							send: [
 								['a', 'x'],
@@ -147,7 +165,10 @@ export const computing: Subject[] = [
 							light: ['s']
 						},
 						{
+							title: 'Swap the inputs',
 							say: '0 + 1: the same result, because the circuit does not care about order.',
+							detail:
+								'Addition gives the same answer in either order, and so do these gates. XOR only asks whether the inputs differ and AND only asks whether both are on, never which wire carries which value. So the outputs are again Sum 1, Carry 0.',
 							set: { b: 'B = 1', s: 'Sum = 1' },
 							send: [
 								['b', 'x'],
@@ -156,7 +177,10 @@ export const computing: Subject[] = [
 							light: ['s']
 						},
 						{
+							title: 'Carry the one',
 							say: '1 + 1: the inputs match, so Sum = 0, and AND gives Carry = 1. That is 10 in binary, which is 2.',
+							detail:
+								'With both inputs on, XOR sees no difference and outputs 0, while AND fires. The carry is the 2s digit, just like carrying a ten in decimal. A full adder adds a third input for the carry coming in, and a chain of 32 full adders adds two 32-bit numbers.',
 							set: { a: 'A = 1', b: 'B = 1', c: 'Carry = 1' },
 							send: [
 								['a', 'n'],
@@ -204,25 +228,37 @@ export const computing: Subject[] = [
 					],
 					steps: [
 						{
+							title: 'Input changes',
 							say: 'D changes to 1, but the clock is low, so Q ignores it.',
+							detail:
+								'A D flip-flop only looks at its D input at one instant: the rising edge of the clock. Between edges D can change as often as it likes and Q keeps its old value. This gives the logic in front of it time to settle before the result is captured.',
 							set: { d: 'D = 1' },
 							send: [['d', 'ff']],
 							light: ['d']
 						},
 						{
+							title: 'Clock edge',
 							say: 'The clock rises. This edge is the moment the flip-flop acts.',
+							detail:
+								'The clock is a square wave that ticks millions or billions of times a second. The flip-flop samples D at the moment the clock goes from low to high. D must be steady for a short setup time just before the edge, or the stored value can come out wrong.',
 							set: { d: 'D = 1', clk: 'Clock rises' },
 							send: [['clk', 'ff']],
 							light: ['clk']
 						},
 						{
+							title: 'Q takes the value',
 							say: 'Q copies D, so the circuit has stored a 1.',
+							detail:
+								'Shortly after the edge, the output Q changes to match what D was at that instant. Every flip-flop in a chip usually shares the same clock, so they all update together. That keeps a whole processor moving in step, one tick at a time.',
 							set: { d: 'D = 1', clk: 'Clock rises', q: 'Q = 1' },
 							send: [['ff', 'q']],
 							light: ['q']
 						},
 						{
+							title: 'Hold the bit',
 							say: 'D falls back to 0, but Q keeps its 1 until the next rising edge. That is memory.',
+							detail:
+								'Between rising edges Q holds its value, whatever D does. That is one bit of storage. Eight flip-flops on one clock make a register that holds a byte, and feeding back its value plus one turns it into a counter.',
 							set: { clk: 'Clock low', q: 'Q = 1' },
 							light: ['q']
 						}
@@ -274,11 +310,17 @@ export const computing: Subject[] = [
 					],
 					steps: [
 						{
+							title: 'Fill the map',
 							say: 'F is 1 only in the two rows where A = 1. Those 1s go on the map.',
+							detail:
+								'A Karnaugh map is a truth table laid out as a grid. Each cell is one combination of inputs, and you write the output for that combination inside it. Here the two cells where A is 1 hold a 1, and the two where A is 0 hold a 0.',
 							light: ['c10', 'c11']
 						},
 						{
+							title: 'Write sum of products',
 							say: 'Written row by row, F = A·¬B + A·B. That is two ANDs and an OR.',
+							detail:
+								'Sum of products takes each row whose output is 1, writes it as an AND term, then ORs the terms together. It always gives a correct expression, but rarely the smallest one. Built as written, this one also needs a NOT gate to make ¬B.',
 							set: { f: 'F = A·¬B + A·B' },
 							send: [
 								['c10', 'f'],
@@ -286,18 +328,27 @@ export const computing: Subject[] = [
 							]
 						},
 						{
+							title: 'Group the neighbours',
 							say: 'The two 1s are neighbours, so circle them as one group of 2.',
+							detail:
+								'On a Karnaugh map, neighbouring cells differ in exactly one input. That is why rows and columns go in Gray code order, not counting order. Groups must hold 1, 2, 4 or 8 cells, and the bigger the group, the simpler the term it gives.',
 							set: { f: 'F = A·¬B + A·B' },
 							send: [['c10', 'c11']],
 							light: ['c10', 'c11']
 						},
 						{
+							title: 'Drop the variable',
 							say: 'Inside the group B is 0 once and 1 once, so B does not matter.',
+							detail:
+								'An input that changes inside a group cannot affect the output there. In algebra, B + ¬B is always 1, so A·(B + ¬B) collapses to A·1. Each doubling of a group removes one more variable from its term.',
 							set: { f: 'F = A·(¬B + B)', c10: 'A=1 B=?\n1', c11: 'A=1 B=?\n1' },
 							light: ['c10', 'c11']
 						},
 						{
+							title: 'Simplest form',
 							say: 'Only A is left: F = A. The gates are gone, and one wire does the job.',
+							detail:
+								'F = A needs no gates at all, just a wire from input A to the output. Fewer gates mean less chip area, less power and a shorter delay. Before building, check the result against the original truth table: all four rows still match.',
 							set: { f: 'F = A', c10: 'A=1 B=?\n1', c11: 'A=1 B=?\n1' },
 							light: ['f']
 						}
@@ -359,24 +410,36 @@ fraction  1001000…   the leading 1 is not stored
 					],
 					steps: [
 						{
+							title: 'Set the sign',
 							say: 'Store -6.25 as a 32-bit float. It is negative, so the sign bit is 1.',
+							detail:
+								'IEEE 754 stores the sign apart from the size of the number, in the very first bit. 0 means positive and 1 means negative. Because of this, floats have both +0 and -0, which compare as equal.',
 							set: { sign: 'Sign\n1' },
 							send: [['num', 'sign']],
 							light: ['sign']
 						},
 						{
+							title: 'Normalise',
 							say: 'In binary 6.25 is 110.01. Slide the point to get 1.1001 × 2².',
+							detail:
+								'6 is 110 in binary and .25 is .01, because the places after the point are worth ½, ¼ and so on. Moving the point two places left means multiplying by 2² to keep the same value. Every normal float is written this way, with a single 1 before the point.',
 							set: { sign: 'Sign\n1', num: '-1.1001₂ × 2²' },
 							light: ['num']
 						},
 						{
+							title: 'Bias the exponent',
 							say: 'Add the bias of 127 to the power: 2 + 127 = 129, which is 10000001.',
+							detail:
+								'Adding 127 means the 8 bits hold 0 to 255 with no sign of their own, so positive floats sort just like plain integers. Stored values 1 to 254 cover powers from -126 to 127. The values 0 and 255 are kept for zero, very tiny numbers, infinity and NaN (not a number).',
 							set: { sign: 'Sign\n1', num: '-1.1001₂ × 2²', exp: 'Exponent\n10000001' },
 							send: [['num', 'exp']],
 							light: ['exp']
 						},
 						{
+							title: 'Hidden leading bit',
 							say: 'Every normal number starts with 1, so that 1 is not stored. The fraction keeps 1001, then zeros.',
+							detail:
+								'Since a normal number always has a 1 before the point, storing it would waste a bit. Leaving it out gives 24 bits of precision from 23 stored ones. The fraction fills from the left, so 1001 sits at the top of the 23 bits, followed by 19 zeros.',
 							set: {
 								sign: 'Sign\n1',
 								num: '-1.1001₂ × 2²',
@@ -387,7 +450,10 @@ fraction  1001000…   the leading 1 is not stored
 							light: ['frac']
 						},
 						{
+							title: 'Pack the bits',
 							say: 'Together the bits read 0xC0C80000. -6.25 fits exactly, but 0.1 never can.',
+							detail:
+								'Grouped in fours, the 32 bits are 1100 0000 1100 1000 and then zeros, which is C0C80000 in hex. 6.25 is a sum of powers of two, so it is stored exactly. In binary 0.1 is 0.000110011... repeating forever, so it is rounded to the nearest float.',
 							set: {
 								sign: 'Sign\n1',
 								num: '-1.1001₂ × 2²',
@@ -463,27 +529,42 @@ gcc -Wall -Wextra hello.c -o hello
 					],
 					steps: [
 						{
+							title: 'Preprocess',
 							say: 'The preprocessor pastes stdio.h into your file.',
+							detail:
+								'Lines starting with # are handled before real compiling begins. #include copies a whole header file in, and #define swaps a name for text. Running gcc -E hello.c shows the result, often hundreds of lines from that one include.',
 							send: [['src', 'pre']],
 							light: ['pre']
 						},
 						{
+							title: 'Compile to assembly',
 							say: 'The compiler checks the code and writes assembly. A syntax error stops it here.',
+							detail:
+								'The compiler parses the code, checks the types and turns it into assembly for one processor family, such as x86-64 or ARM. Optimisation also happens here, with flags such as -O2. gcc -S hello.c stops at this point and leaves the assembly in hello.s.',
 							send: [['pre', 'cc']],
 							light: ['cc']
 						},
 						{
+							title: 'Assemble',
 							say: 'The assembler turns that into machine code.',
+							detail:
+								'Each assembly instruction becomes a few bytes of machine code. The result is an object file, hello.o, which cannot run yet because calls to outside functions such as printf are left as blanks to fill in. gcc -c hello.c stops at this stage.',
 							send: [['cc', 'as']],
 							light: ['as']
 						},
 						{
+							title: 'Link',
 							say: 'The linker finds printf in the C library and joins everything together.',
+							detail:
+								'The linker matches each blank call to a real function and fixes up the addresses. printf lives in the C standard library, which is usually linked dynamically, so its code is loaded when the program starts. A function it cannot find shows up as an "undefined reference" error.',
 							send: [['as', 'ld']],
 							light: ['ld']
 						},
 						{
+							title: 'Run the program',
 							say: 'You now have a program the processor can run directly.',
+							detail:
+								'The executable holds machine code plus headers that tell the operating system how to load it: ELF format on Linux, PE on Windows. It only runs on the kind of processor and system it was built for. Typing ./hello loads it into memory, and a small start-up routine calls main.',
 							send: [['ld', 'exe']],
 							light: ['exe']
 						}
@@ -527,21 +608,36 @@ void swap(int *x, int *y) {
 					],
 					edges: [{ from: 'p', to: 'a' }],
 					steps: [
-						{ say: 'int a = 5 puts the value 5 at some address, say 0x100.', light: ['a'] },
 						{
+							title: 'Store a value',
+							say: 'int a = 5 puts the value 5 at some address, say 0x100.',
+							detail:
+								'Memory is a long row of numbered bytes, and each number is an address. A typical int takes 4 bytes, so a fills bytes 0x100 to 0x103. The name a only exists for you; the compiled code works with the address.',
+							light: ['a']
+						},
+						{
+							title: 'Take the address',
 							say: 'int *p = &a stores that address in p. Now p points at a.',
+							detail:
+								'The & operator gives the address of a variable, and the type int * means "address of an int". p is a variable in its own right, with its own address, and on a 64-bit machine it takes 8 bytes. Its value is simply the number 0x100.',
 							set: { p: 'p\n0x100' },
 							send: [['p', 'a']],
 							light: ['p']
 						},
 						{
+							title: 'Write through it',
 							say: '*p = 9 follows the arrow and writes through it.',
+							detail:
+								'The * in front of p means "go to the address stored in p". So *p = 9 writes 9 into the bytes at 0x100, which is exactly where a lives. Because p is an int *, the compiler knows to write 4 bytes there.',
 							set: { p: 'p\n0x100', a: 'a at 0x100\nvalue 9' },
 							send: [['p', 'a']],
 							light: ['a']
 						},
 						{
+							title: 'Change from afar',
 							say: 'The variable a changed without its name appearing on that line. That is the power, and the danger.',
+							detail:
+								"This is how a function like swap changes its caller's variables: C copies the arguments, but a copied address still points at the original. The danger is the same feature. A wrong or stale address quietly writes over memory you never meant to touch, with no error message.",
 							set: { p: 'p\n0x100', a: 'a at 0x100\nvalue 9' }
 						}
 					]
@@ -584,28 +680,43 @@ snprintf(name, sizeof name, "%s", "Alexander");   // safe: cut to "Ale"`,
 					],
 					steps: [
 						{
+							title: 'Neighbours in memory',
 							say: 'Two variables sit side by side in memory. The array has room for 4 bytes.',
+							detail:
+								'Local variables are often placed right next to each other, with no gap. name[4] holds exactly 4 chars, and a C string needs one of them for the closing zero byte, so it fits a 3-letter name at most. Nothing marks where name ends and isAdmin begins.',
 							light: ['a', 'b']
 						},
 						{
+							title: 'Copy without limits',
 							say: 'strcpy copies "Alexander" with no length check.',
+							detail:
+								'strcpy keeps copying until it reaches the zero byte at the end of the source, and never asks how big the destination is. "Alexander" is 9 letters plus that zero byte. So 10 bytes are on their way into a 4-byte array.',
 							send: [['in', 'a']],
 							set: { a: 'name[4]\nAlex' },
 							light: ['in']
 						},
 						{
+							title: 'Overflow',
 							say: 'The extra letters keep going, straight into the next variable.',
+							detail:
+								"C does not check array bounds, so the write carries on into whatever bytes come next. Here that is isAdmin, but it could be another variable, a saved pointer or the function's return address. The program usually keeps running with no warning at all.",
 							send: [['a', 'b']],
 							set: { a: 'name[4]\nAlex', b: 'isAdmin\nander' },
 							down: ['b']
 						},
 						{
+							title: 'Corrupted flag',
 							say: 'isAdmin is now non-zero. That is how a buffer overflow turns into a security hole.',
+							detail:
+								'In C any non-zero value counts as true, so the stray letter codes make an admin check pass. Attackers craft input to overwrite exactly the bytes they want, such as a return address. Building with -fsanitize=address reports the bad write the moment it happens during testing.',
 							set: { a: 'name[4]\nAlex', b: 'isAdmin\nTRUE?!' },
 							down: ['b']
 						},
 						{
+							title: 'Bounded copy',
 							say: 'A bounded copy stops at the end of the array, and the neighbour stays safe.',
+							detail:
+								'snprintf is told the destination size with sizeof name, so it writes at most 3 letters plus the zero byte. The name is cut to "Ale", which is a visible bug but a safe one. Its return value is the length it wanted to write, so you can detect the cut.',
 							set: { a: 'name[4]\nAle' },
 							send: [['in', 'a']],
 							light: ['b']
@@ -658,11 +769,17 @@ if (port & LED) { /* bit 3 is on */ }`,
 					],
 					steps: [
 						{
+							title: 'Pick the bit',
 							say: 'port holds 0000 0001. We want bit 3 on, and bit 0 must stay as it is.',
+							detail:
+								'Hardware registers pack many switches into one number, one bit each. Here bit 3 might drive an LED while bit 0 controls something else. The mask 1u << 3 shifts a single 1 three places left, giving 0000 1000, which marks only the bit we want.',
 							light: ['port', 'mask']
 						},
 						{
+							title: 'OR the mask in',
 							say: 'OR with the mask: a bit is 1 if it is 1 in either value.',
+							detail:
+								'OR works on each bit position separately. Where the mask has 0, the result copies port, so bit 0 keeps its 1, and where the mask has 1, the result is 1 whatever port had. That is why OR can switch bits on but never off.',
 							set: { out: 'port | mask\n0000 1001' },
 							send: [
 								['port', 'out'],
@@ -671,12 +788,18 @@ if (port & LED) { /* bit 3 is on */ }`,
 							light: ['out']
 						},
 						{
+							title: 'Write it back',
 							say: 'Store it back. Bit 3 is on, and bit 0 survived.',
+							detail:
+								'port |= mask is short for port = port | mask: read, change, then write. On a real device register those are separate steps, so an interrupt in between can lose another update. Embedded code may briefly disable interrupts, or use special set and clear registers, to avoid this.',
 							set: { port: 'port\n0000 1001', out: 'port | mask\n0000 1001' },
 							light: ['port']
 						},
 						{
+							title: 'AND with the inverse',
 							say: 'To clear bit 3, AND with the inverted mask, 1111 0111.',
+							detail:
+								'The ~ operator flips every bit, so the inverted mask is 0 only at bit 3. AND keeps a bit only where both values have a 1. So bit 3 is forced to 0, and every other bit is copied across unchanged.',
 							set: {
 								port: 'port\n0000 1001',
 								mask: '~mask\n1111 0111',
@@ -689,7 +812,10 @@ if (port & LED) { /* bit 3 is on */ }`,
 							light: ['out']
 						},
 						{
+							title: 'Bit cleared',
 							say: 'Store it back. Bit 3 is off again, and every other bit is untouched.',
+							detail:
+								'|= mask and &= ~mask are the standard pair for setting and clearing single bits. Two more complete the set: ^= mask flips a bit, and (port & mask) != 0 tests it. All four touch only the bits in the mask, so other code sharing the register is not disturbed.',
 							set: {
 								port: 'port\n0000 0001',
 								mask: '~mask\n1111 0111',
@@ -744,31 +870,46 @@ void show(const struct Reading *r) {
 					edges: [],
 					steps: [
 						{
+							title: 'Place the first field',
 							say: 'id is a char, so it takes byte 0.',
+							detail:
+								'Fields are stored in the order you declare them, and the first one always starts at offset 0. A char is 1 byte and can sit at any address. The offsetof macro from stddef.h tells you where each field really starts.',
 							hide: ['pad', 'value', 'ok', 'pad2'],
 							light: ['id']
 						},
 						{
+							title: 'Pad for alignment',
 							say: 'value is an int and must start at a multiple of 4, so bytes 1 to 3 are left empty.',
+							detail:
+								'Many processors read a 4-byte int fastest, or only, when its address is a multiple of 4. So the compiler skips ahead to offset 4 and leaves 3 unused padding bytes. Those bytes hold leftover junk, which matters if you ever compare structs with memcmp.',
 							set: { size: 'sizeof = 8 so far' },
 							hide: ['ok', 'pad2'],
 							send: [['id', 'value']],
 							light: ['pad']
 						},
 						{
+							title: 'Fit the next char',
 							say: 'ok is a char, so it fits in byte 8.',
+							detail:
+								'value ends at byte 7, so the next free byte is 8. A char has no alignment rule, so it goes there with no padding before it. The running size is now 9 bytes, but the compiler is not finished yet.',
 							set: { size: 'sizeof = 9 so far' },
 							hide: ['pad2'],
 							send: [['value', 'ok']],
 							light: ['ok']
 						},
 						{
+							title: 'Pad the end',
 							say: 'The end is padded to a multiple of 4 too, so every item in an array stays aligned.',
+							detail:
+								'In an array the second struct starts straight after the first. If the size were 9, its int would land at offset 13, which is not a multiple of 4. Rounding the size up to 12 keeps the int in every element aligned.',
 							set: { size: 'sizeof = 12' },
 							light: ['pad2', 'size']
 						},
 						{
+							title: 'Reorder the fields',
 							say: 'Put value first and the two chars after it: 4 + 1 + 1 = 6, padded to 8.',
+							detail:
+								'With value at offset 0 and the two chars at 4 and 5, only 2 bytes of tail padding are needed. Across a million readings that saves 4 MB. Only reorder when nothing depends on the layout, such as a file format or data sent over a network.',
 							set: { size: 'Reordered: 8' },
 							down: ['pad']
 						}
@@ -828,22 +969,34 @@ public:
 					],
 					steps: [
 						{
+							title: 'Call through the base',
 							say: 'The calling code only knows it has a Shape.',
+							detail:
+								'The caller holds a Shape pointer and can only use what Shape declares. It cannot tell which derived class it really has. Because area is virtual, the choice of which code runs is put off until the program is running.',
 							send: [['call', 'base']],
 							light: ['base']
 						},
 						{
+							title: 'Dispatch to Circle',
 							say: 'At runtime the object is really a Circle, so Circle::area runs.',
+							detail:
+								"An object of a class with virtual functions usually carries a hidden pointer to a table of function addresses, called the vtable. A Circle's table points at Circle::area. The call looks up the table and jumps there, which costs one extra memory read.",
 							send: [['base', 'c']],
 							light: ['c']
 						},
 						{
+							title: 'Same call, Square',
 							say: 'The same line of code with a Square runs Square::area.',
+							detail:
+								"The calling line is identical, but this object's hidden pointer leads to the Square table, so Square::area runs. This only works through a pointer or reference. It is also why Shape needs a virtual destructor, so deleting through a Shape pointer cleans up the whole object.",
 							send: [['base', 's']],
 							light: ['s']
 						},
 						{
+							title: 'Extend without editing',
 							say: 'Add a Triangle later, and the calling code does not change at all.',
+							detail:
+								'A new Triangle class only has to override area. Code written against Shape keeps working without being changed, and it does not even need recompiling. This is the open/closed principle: open to extension, closed to modification.',
 							set: { s: 'Triangle\narea = ½bh' },
 							send: [['base', 's']],
 							light: ['s']
@@ -888,24 +1041,36 @@ public:
 					],
 					steps: [
 						{
+							title: 'Raw allocation',
 							say: 'A raw pointer: new Sensor runs on the way in.',
+							detail:
+								'new asks the heap for memory and runs the Sensor constructor. With a raw pointer, freeing it is your job: you must call delete on every way out of the function. That means every return, every early exit and every exception.',
 							send: [['in', 'mem']],
 							light: ['mem']
 						},
 						{
+							title: 'Exception leaks',
 							say: 'read() throws an exception, which jumps past the delete line.',
+							detail:
+								'When read() throws, C++ leaves the function at once and looks for a matching catch further up. Ordinary lines after the throw, including delete, never run. The memory stays allocated with nothing pointing at it, and leaking a file handle or a lock this way can be even worse.',
 							send: [['use', 'out']],
 							set: { mem: 'Sensor leaked' },
 							down: ['mem']
 						},
 						{
+							title: 'Hand over ownership',
 							say: 'Now use a unique_ptr. It owns the memory.',
+							detail:
+								'std::make_unique<Sensor>() creates the object and gives it to a unique_ptr, a small object that lives on the stack. Its destructor calls delete for you. It cannot be copied, only moved, so there is always exactly one owner.',
 							send: [['in', 'mem']],
 							set: { mem: 'Owned by\nunique_ptr' },
 							light: ['mem']
 						},
 						{
+							title: 'Destructor cleans up',
 							say: 'The same exception unwinds the function, and the destructor still runs.',
+							detail:
+								'While an exception unwinds the stack, C++ runs the destructor of every local object in each scope it leaves. So the unique_ptr frees the Sensor on the way out. The same idea closes files with std::fstream and releases locks with std::lock_guard.',
 							send: [['use', 'out']],
 							set: { mem: 'Freed\nautomatically' },
 							light: ['out']
@@ -953,12 +1118,18 @@ public:
 					],
 					steps: [
 						{
+							title: 'Subscribe',
 							say: 'The display and the logger subscribe to the sensor.',
+							detail:
+								'Each observer registers with the subject, which keeps a list of them. The subject only knows them through a small interface, often a single method such as update(value). It has no idea whether it is talking to a display, a logger or anything else.',
 							hide: ['c'],
 							light: ['a', 'b']
 						},
 						{
+							title: 'Notify all',
 							say: 'The value changes, so the sensor notifies every subscriber.',
+							detail:
+								'When its value changes, the sensor walks its list and calls update on each observer in turn. The sensor decides when to tell them, and each observer decides what to do with the news. A common bug is forgetting to unsubscribe, which leaves dead objects on the list.',
 							hide: ['c'],
 							send: [
 								['sub', 'a'],
@@ -967,12 +1138,18 @@ public:
 							set: { sub: 'Sensor\n31 °C' }
 						},
 						{
+							title: 'Add a subscriber',
 							say: "A new Alarm class subscribes. The sensor's code does not change.",
+							detail:
+								'The Alarm implements the same observer interface and registers like the others. Nothing in the Sensor class is edited or retested. This is dependency inversion at work: the sensor depends on an interface, not on any concrete class.',
 							light: ['c'],
 							set: { sub: 'Sensor\n31 °C' }
 						},
 						{
+							title: 'Reach every observer',
 							say: 'The next change reaches all three. That is low coupling.',
+							detail:
+								'One change now reaches three objects, and the sensor still knows nothing about what any of them do. Low coupling means you can add, change or remove one part with little effect on the rest. The trade-off is that the chain of calls is harder to follow when reading the code.',
 							send: [
 								['sub', 'a'],
 								['sub', 'b'],
@@ -1029,29 +1206,44 @@ std::sort(v.begin(), v.end());   // 1 2 5 8`,
 					],
 					steps: [
 						{
+							title: 'Write it once',
 							say: 'You write biggest once, with T as a blank for the type.',
+							detail:
+								'template <typename T> tells the compiler that T stands for a type to be filled in later. A template on its own produces no machine code at all. That is why templates usually live in header files: the compiler needs the full text wherever they are used.',
 							hide: ['i', 'd', 'p'],
 							light: ['tpl']
 						},
 						{
+							title: 'Deduce int',
 							say: 'biggest(3, 7) makes the compiler stamp out a version for int.',
+							detail:
+								'The compiler sees two int arguments, works out that T is int, and generates biggest<int> with int written wherever T was. This is called template argument deduction. Mixing types, as in biggest(3, 7.0), fails because T cannot be both int and double.',
 							hide: ['d', 'p'],
 							send: [['tpl', 'i']],
 							light: ['i']
 						},
 						{
+							title: 'Another instantiation',
 							say: 'biggest(2.5, 1.0) stamps out a second copy for double. Each copy is as fast as hand-written code.',
+							detail:
+								'Each type used gets its own generated function, with no type checks left to do at runtime. The cost moves to build time instead: longer compiles and a larger program, sometimes called code bloat. The STL containers and algorithms work the same way.',
 							hide: ['p'],
 							send: [['tpl', 'd']],
 							light: ['d']
 						},
 						{
+							title: 'Compile-time error',
 							say: 'A Point type with no < operator is refused when you build, not when you run.',
+							detail:
+								'biggest uses a < b, so it only works for types that support <. The check happens when the compiler fills in T, so the mistake is a build error rather than a crash in front of a user. C++20 concepts let you state such requirements up front for clearer error messages.',
 							send: [['tpl', 'p']],
 							down: ['p']
 						},
 						{
+							title: 'Satisfy the requirement',
 							say: 'Give Point an operator<, and the same template works for it too.',
+							detail:
+								'Once Point defines bool operator<(const Point&) const, the template compiles for Point as well. Nothing inside biggest had to change. std::sort and std::max rely on the same rule, which is why your own types can be sorted once they define <.',
 							set: { p: 'Point now\nhas <' },
 							send: [['tpl', 'p']],
 							light: ['p']
@@ -1116,30 +1308,45 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 					],
 					steps: [
 						{
+							title: 'Own a buffer',
 							say: 'a owns a buffer of a million ints on the heap.',
+							detail:
+								'A std::vector object itself is small, typically three pointers: start of data, end of data and end of capacity. The million ints live in a separate block on the heap, about 4 MB. Copying and moving are really about what happens to that block.',
 							hide: ['b', 'buf2', 'c'],
 							send: [['a', 'buf']],
 							light: ['a', 'buf']
 						},
 						{
+							title: 'Deep copy',
 							say: 'Copy: b = a. b gets a brand new buffer, and every int is copied across.',
+							detail:
+								'The copy constructor allocates a fresh 4 MB block and copies every element across. Afterwards a and b are fully independent, so changing one never affects the other. It is safe, but the cost grows with the size of the data.',
 							hide: ['c'],
 							send: [['buf', 'buf2']],
 							light: ['buf2']
 						},
 						{
+							title: 'Count the cost',
 							say: 'That is a million writes and twice the memory. Fine if you need two copies, wasteful if you do not.',
+							detail:
+								'A copy takes time in proportion to the number of elements and doubles the memory used. It often happens by accident, for example when a vector is passed to a function by value. Pass a const reference when the function only needs to read the data.',
 							hide: ['c'],
 							down: ['buf2']
 						},
 						{
+							title: 'Steal the pointer',
 							say: 'Move: c = std::move(a). c simply takes the pointer to Buffer 1. No ints are copied.',
+							detail:
+								'std::move is only a cast that marks a as safe to take from. The move constructor then copies three pointers into c and sets the ones in a to null. That is a fixed amount of work, whether the vector holds ten ints or ten million.',
 							set: { a: 'a\n(empty)', c: 'c\n→ Buffer 1' },
 							send: [['c', 'buf']],
 							light: ['c']
 						},
 						{
+							title: 'Moved-from object',
 							say: 'a is left empty but valid. Give it a new value or let it go out of scope.',
+							detail:
+								'After a move the source must still be safe to destroy and to assign to. The vector move constructor leaves it empty, but many types only promise a valid yet unspecified state. Reading from a moved-from object is a common bug, so assign it a new value first.',
 							set: { a: 'a\n(empty)', c: 'c\n→ Buffer 1' },
 							down: ['a']
 						}
@@ -1222,25 +1429,43 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 						{ from: 'list', to: 'bin' }
 					],
 					steps: [
-						{ say: 'Find one name in a million sorted names.', light: ['list'] },
 						{
+							title: 'Set the task',
+							say: 'Find one name in a million sorted names.',
+							detail:
+								'Big-O counts how the number of basic steps grows as the input size n grows. Here n is 1,000,000 and one step is one comparison. Because the names are sorted, we can choose between two very different strategies.',
+							light: ['list']
+						},
+						{
+							title: 'Linear search',
 							say: 'After 10 checks, linear search is still near the start.',
+							detail:
+								'Linear search checks names one by one from the start. Each check rules out a single name, so after 10 checks 999,990 are still left. Its cost is O(n): on average it looks at half the list, and at worst all of it.',
 							send: [['list', 'lin']],
 							set: { lin: 'Linear search\n10 checks' }
 						},
 						{
+							title: 'Binary search',
 							say: 'After 10 checks, binary search has cut the list down to about 1,000 names.',
+							detail:
+								'Binary search checks the middle name and throws away the half that cannot hold the target. Each check halves what is left, so 10 checks shrink a million to 1,000,000 ÷ 2¹⁰, about 977. It only works on sorted data, which is the price of the speed.',
 							send: [['list', 'bin']],
 							set: { lin: 'Linear search\n10 checks', bin: 'Binary search\n10 checks' },
 							light: ['bin']
 						},
 						{
+							title: 'Logarithmic finish',
 							say: 'Binary search finishes in about 20 checks.',
+							detail:
+								'Halving a million names until one is left takes log₂ of 1,000,000 steps, which is just under 20. Doubling the data adds only one more check. A billion names would need about 30.',
 							set: { lin: 'Linear search\n20 checks', bin: 'Found in\n20 checks' },
 							light: ['bin']
 						},
 						{
+							title: 'Compare the growth',
 							say: 'Linear search might need a million. Same data, 50,000 times more work.',
+							detail:
+								'Linear search needs up to n checks and binary search about log₂ n, so the gap widens as the data grows. At a thousand names the ratio is 1,000 to 10, a factor of 100. Faster hardware cannot close a gap that keeps growing like this.',
 							set: { lin: 'Linear search\n1,000,000 checks', bin: 'Found in\n20 checks' },
 							light: ['lin']
 						}
@@ -1287,29 +1512,44 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 					],
 					steps: [
 						{
+							title: 'Divide',
 							say: 'Start with an unsorted list and split it in half.',
+							detail:
+								'Merge sort splits the list at the middle into two halves of nearly equal size. It keeps splitting until every piece holds one item, and a one-item list is already sorted. A list of n items can be halved about log₂ n times, here twice.',
 							send: [
 								['all', 'l'],
 								['all', 'r']
 							]
 						},
 						{
+							title: 'Sort the halves',
 							say: 'Sort each half. These are small enough to be simple.',
+							detail:
+								'Each half is sorted by calling merge sort on it, which is the conquer step. In this tiny example each half has two items, so one comparison puts each in order. The same code handles halves of any size, which is what makes it recursive.',
 							set: { l: '2   5', r: '1   8' },
 							light: ['l', 'r']
 						},
 						{
+							title: 'Merge the fronts',
 							say: 'Merge: compare the front items, 2 and 1. Take 1.',
+							detail:
+								'Both halves are sorted, so the smallest item overall must be at the front of one of them. Merging only ever compares the two front items and moves the smaller one out. Merge sort needs a spare array of n items for this, unlike quicksort, which sorts in place.',
 							set: { l: '2   5', r: '8', out: '1' },
 							send: [['r', 'out']]
 						},
 						{
+							title: 'Keep merging',
 							say: 'Compare 2 and 8. Take 2, then 5.',
+							detail:
+								'After 1 has gone, the fronts are 2 and 8, so 2 is taken. Then 5 is compared with 8, and 5 is taken. Each comparison moves exactly one item, so merging n items takes at most n - 1 comparisons.',
 							set: { l: '', r: '8', out: '1   2   5' },
 							send: [['l', 'out']]
 						},
 						{
+							title: 'Finish the merge',
 							say: 'Only 8 is left, so add it. The list is sorted.',
+							detail:
+								'When one half runs out, the rest of the other half is already in order and is copied straight across. Each level of splitting does O(n) merging work, and there are about log₂ n levels, giving O(n log n) for any input. Merge sort is also stable: equal items keep their original order.',
 							set: { l: '', r: '', out: '1   2   5   8' },
 							send: [['r', 'out']],
 							light: ['out']
@@ -1358,7 +1598,10 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 					],
 					steps: [
 						{
+							title: 'Start from A',
 							say: 'From A, the neighbours cost B = 4 and C = 1.',
+							detail:
+								'Every node starts at a distance of infinity, meaning no route found yet, except the start, which is 0. Visiting A looks at each edge leaving it and records the cost of reaching each neighbour. These are only first estimates.',
 							send: [
 								['a', 'b'],
 								['a', 'c']
@@ -1367,25 +1610,37 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 							light: ['a']
 						},
 						{
+							title: 'Relax through C',
 							say: 'C is closest, so visit it. Going through C reaches B for 1 + 2 = 3, which beats 4.',
+							detail:
+								'Dijkstra always visits the unvisited node with the smallest distance, and C at 1 is cheapest. Its distance is now final, because any other route starts at 4 or more and no edge is negative. Lowering B to a cheaper route is called relaxation.',
 							send: [['c', 'b']],
 							set: { b: 'B\n3', c: 'C\n1' },
 							light: ['c']
 						},
 						{
+							title: 'Tentative distance',
 							say: 'Through C, D would cost 1 + 5 = 6. Note it for now.',
+							detail:
+								'Checking the other edge out of C gives D a first estimate of 6. It is only tentative, because D has not been visited yet. A cheaper route may still turn up through a node that has not been expanded.',
 							send: [['c', 'd']],
 							set: { b: 'B\n3', c: 'C\n1', d: 'D\n6' },
 							light: ['c']
 						},
 						{
+							title: 'Relax through B',
 							say: 'B is closest next. Going through B reaches D for 3 + 1 = 4, which beats 6.',
+							detail:
+								'B now has the smallest distance among unvisited nodes, so it is visited and its 3 becomes final. Its edge to D gives 3 + 1 = 4, so the estimate for D drops from 6. A priority queue is the usual way to find the closest unvisited node quickly.',
 							send: [['b', 'd']],
 							set: { b: 'B\n3', c: 'C\n1', d: 'D\n4' },
 							light: ['b']
 						},
 						{
+							title: 'Trace the path',
 							say: 'The shortest path is A, C, B, D, at a total cost of 4.',
+							detail:
+								'D is visited last and its 4 is final. To recover the route, each node remembers which neighbour gave it its best distance, and you follow those links back from D. With negative edge weights this can give wrong answers, so Bellman-Ford is used instead.',
 							set: { b: 'B\n3', c: 'C\n1', d: 'D\n4' },
 							send: [
 								['a', 'c'],
@@ -1448,19 +1703,28 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 					],
 					steps: [
 						{
+							title: 'Hash the key',
 							say: 'Insert "cat". The toy hash adds letter positions: 3 + 1 + 20 = 24, and 24 mod 8 = 0.',
+							detail:
+								'A hash function turns any key into a number, and mod 8 maps that number onto one of 8 buckets. The same key must always give the same number. Real hash functions mix the bits far more thoroughly than this toy, so similar keys spread out.',
 							set: { hash: '24 mod 8\n= 0' },
 							send: [['key', 'hash']],
 							light: ['hash']
 						},
 						{
+							title: 'Store directly',
 							say: '"cat" goes straight into bucket 0. No searching.',
+							detail:
+								'The bucket number is an array index, so the computer jumps straight to bucket 0 in one step. That is where O(1) comes from: the cost does not depend on how many items the table holds. The key is stored next to its value so a later lookup can confirm it.',
 							set: { hash: '24 mod 8\n= 0', b0: 'bucket 0\ncat' },
 							send: [['hash', 'b0']],
 							light: ['b0']
 						},
 						{
+							title: 'Another bucket',
 							say: '"dog" hashes to 26 mod 8 = 2, so it goes into bucket 2.',
+							detail:
+								"Different keys usually hash to different buckets, so items spread across the table. The load factor is items divided by buckets, here 2 out of 8. Many tables double in size and rehash every item once it passes a limit, such as 0.75 in Java's HashMap.",
 							set: {
 								key: 'key "dog"',
 								hash: '26 mod 8\n= 2',
@@ -1473,7 +1737,10 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 							]
 						},
 						{
+							title: 'Handle a collision',
 							say: '"act" has the same letters as "cat", so it also lands in bucket 0. That is a collision, and the bucket keeps a short list.',
+							detail:
+								'This toy hash only adds letters, so any rearrangement of the same letters collides. With chaining, each bucket holds a short list, and a lookup compares keys along it. If every key collided, lookups would slow to O(n), which is why the quality of the hash function matters.',
 							set: {
 								key: 'key "act"',
 								hash: '24 mod 8\n= 0',
@@ -1487,7 +1754,10 @@ std::vector<int> c = std::move(a);   // move: c takes a's buffer
 							light: ['b0']
 						},
 						{
+							title: 'Look it up',
 							say: 'Finding "dog" means one hash and one bucket. The rest of the table is never touched.',
+							detail:
+								'A lookup repeats the same hash to find the bucket, then compares the stored key to be sure it really is "dog". Only bucket 2 is examined, however large the table grows. The catch is that buckets have no order, so finding every key in a range needs a sorted structure instead.',
 							set: {
 								key: 'find "dog"',
 								hash: '26 mod 8\n= 2',
@@ -1558,7 +1828,10 @@ long fib(int n) {             // bottom up: n steps
 					],
 					steps: [
 						{
+							title: 'Split the problem',
 							say: 'fib(4) needs fib(3) and fib(2).',
+							detail:
+								'The Fibonacci rule is fib(n) = fib(n-1) + fib(n-2), with fib(0) = 0 and fib(1) = 1. A direct recursive version calls itself twice at every level. Those two calls share most of their work, and that overlap is what dynamic programming exploits.',
 							hide: ['f2b', 'f1'],
 							send: [
 								['f4', 'f3'],
@@ -1567,7 +1840,10 @@ long fib(int n) {             // bottom up: n steps
 							light: ['f4']
 						},
 						{
+							title: 'Overlapping calls',
 							say: 'fib(3) needs fib(2) and fib(1). So fib(2) gets worked out down here first.',
+							detail:
+								'fib(2) now appears in two branches of the tree, and plain recursion would work it out twice. For larger n the repeats explode: the number of calls grows about 1.6 times with each step up in n. That is how fib(40) ends up needing over 300 million calls.',
 							send: [
 								['f3', 'f2b'],
 								['f3', 'f1']
@@ -1575,19 +1851,28 @@ long fib(int n) {             // bottom up: n steps
 							light: ['f2b']
 						},
 						{
+							title: 'Save the answer',
 							say: 'Save the answer, fib(2) = 1. That is memoisation.',
+							detail:
+								'Memoisation keeps a cache, often an array or a hash map indexed by n. Before working out fib(n), the function checks the cache, and afterwards it stores the result there. It trades a little memory for a lot of time.',
 							set: { memo: 'memo:\nfib(2) = 1' },
 							send: [['f2b', 'memo']],
 							light: ['memo']
 						},
 						{
+							title: 'Reuse the answer',
 							say: 'When fib(4) needs fib(2) again, it reads the memo instead of recomputing it.',
+							detail:
+								'The second request for fib(2) costs one lookup instead of a whole subtree of calls. In bigger trees every repeated branch is cut off the same way. This is only safe because fib(2) always has the same answer, wherever it is asked.',
 							set: { memo: 'memo:\nfib(2) = 1', f2a: 'fib(2)\nfrom memo' },
 							send: [['memo', 'f2a']],
 							light: ['f2a']
 						},
 						{
+							title: 'Linear time',
 							say: 'fib(4) = 3. Each value is now worked out once, so the work grows in step with n, not exponentially.',
+							detail:
+								'With the memo there are only n different subproblems and each is solved once, so the time is O(n). The bottom-up version fills values from fib(0) upwards in a loop and keeps just the last two, so it needs only constant memory. fib(40) then takes 40 steps.',
 							set: { memo: 'memo:\nfib(2) = 1', f2a: 'fib(2)\nfrom memo', f4: 'fib(4) = 3' },
 							light: ['f4']
 						}
@@ -1644,28 +1929,43 @@ long fib(int n) {             // bottom up: n steps
 					],
 					steps: [
 						{
+							title: 'Start state',
 							say: 'This machine accepts binary strings with an even number of 1s. It starts in Even.',
+							detail:
+								'A finite automaton has a fixed set of states, one start state and some accepting states. Here Even is both the start and the only accepting state. The state is the whole of its memory: it only knows whether it has seen an even or odd number of 1s.',
 							light: ['e']
 						},
 						{
+							title: 'First transition',
 							say: 'Read 1: move to Odd.',
+							detail:
+								'The rule for Even on reading 1 says go to Odd. The machine reads each symbol exactly once, left to right, and never goes back. So its running time is proportional to the length of the input.',
 							set: { in: 'Input: [1] 0 1' },
 							send: [['e', 'o']],
 							light: ['o']
 						},
 						{
+							title: 'Stay put',
 							say: 'Read 0: a 0 changes nothing, so stay in Odd.',
+							detail:
+								'Every state needs a rule for every symbol. Here reading 0 is a self-loop: the machine stays where it is. The diagram leaves these loops out to keep it tidy, but they are still part of the machine.',
 							set: { in: 'Input: 1 [0] 1' },
 							light: ['o']
 						},
 						{
+							title: 'Back to Even',
 							say: 'Read 1: move back to Even.',
+							detail:
+								'A second 1 makes the count even again, so the rule for Odd on 1 leads back to Even. Two states are enough because only odd or even matters, not the actual count. Tracking an unlimited count would need unlimited states, which a finite automaton cannot have.',
 							set: { in: 'Input: 1 0 [1]' },
 							send: [['o', 'e']],
 							light: ['e']
 						},
 						{
+							title: 'Accept the input',
 							say: 'The input ends in an accepting state, so 101 is accepted. It does have two 1s.',
+							detail:
+								'Acceptance depends only on the state when the input runs out. Ending in Even means accept, and ending in Odd means reject. Regular expression engines and the lexers inside compilers are built from machines like this one.',
 							set: { in: 'Accepted' },
 							light: ['e', 'in']
 						}
@@ -1719,29 +2019,44 @@ long fib(int n) {             // bottom up: n steps
 					edges: [],
 					steps: [
 						{
+							title: 'Set up the machine',
 							say: 'The head starts on the first cell. Its rule: flip the bit, then move right.',
+							detail:
+								'A Turing machine has a tape of cells, a head that sits over one cell, and a current state. Each rule says: in this state, reading this symbol, write a symbol, move left or right, and pick the next state. This machine has one working state, so its rule table is tiny.',
 							light: ['a', 'h']
 						},
 						{
+							title: 'Flip the first bit',
 							say: 'Read 1, write 0, move right.',
+							detail:
+								"In one step the head reads the cell under it, writes the new symbol and moves one cell. The tape is the machine's memory, and unlike a finite automaton it can write to it. Being able to read back what it wrote is what gives it its power.",
 							set: { a: '0' },
 							send: [['a', 'b']],
 							light: ['b']
 						},
 						{
+							title: 'Flip the zero',
 							say: 'Read 0, write 1, move right.',
+							detail:
+								'The same rule fires again, this time turning 0 into 1. The machine never sees the whole tape, only the one cell under the head. Everything it decides comes from its state and that single symbol.',
 							set: { a: '0', b: '1' },
 							send: [['b', 'c']],
 							light: ['c']
 						},
 						{
+							title: 'Flip the last bit',
 							say: 'Read 1, write 0, move right.',
+							detail:
+								'The third cell goes from 1 to 0, and the head moves on to a blank cell. Real programs need many states and long tapes, but every step stays this simple. Any modern computer could be simulated like this, only far more slowly.',
 							set: { a: '0', b: '1', c: '0' },
 							send: [['c', 'd']],
 							light: ['d']
 						},
 						{
+							title: 'Halt',
 							say: 'The head reads a blank, so the rule says halt. 101 has become 010.',
+							detail:
+								'Reaching a halting state ends the run, and whatever is left on the tape is the output. This machine has computed the bitwise NOT of its input. Some machines never reach a halting state, and no general method can tell in advance which ones.',
 							set: { a: '0', b: '1', c: '0', h: 'Halt' },
 							light: ['h']
 						}
@@ -1806,23 +2121,42 @@ long fib(int n) {             // bottom up: n steps
 					],
 					steps: [
 						{
+							title: 'Assume a perfect H',
 							say: 'Suppose someone writes H, a perfect program that predicts whether any program halts.',
+							detail:
+								'This is a proof by contradiction: assume something exists, then show that leads to nonsense. H would take any program with its input and always answer correctly in finite time. Turing published this argument in 1936.',
 							light: ['h']
 						},
 						{
+							title: 'Build D',
 							say: 'We write D. It asks H about a program, then does the opposite of the prediction.',
+							detail:
+								'D is easy to write if H exists: call H, and if it says halt, loop forever, and if it says loop, stop. Programs are just text, so D can pass any program to H, including its own code. Nothing about D is unusual apart from how it uses H.',
 							send: [['d', 'h']],
 							light: ['d']
 						},
-						{ say: 'Now give D to itself.', send: [['x', 'd']], light: ['x'] },
 						{
+							title: 'Self-reference',
+							say: 'Now give D to itself.',
+							detail:
+								'Feeding a program its own code is allowed, because source code is only data. The question for H becomes: does D halt when given D? Whatever H answers, D is built to do the opposite.',
+							send: [['x', 'd']],
+							light: ['x']
+						},
+						{
+							title: 'First case fails',
 							say: 'If H says "D halts", then D loops forever. So H was wrong.',
+							detail:
+								'D asked H about itself and got the answer "halts". By its own rule it then loops forever, so it never halts. The prediction was wrong, so a perfect H could never give this answer.',
 							set: { x: 'H says halts: D loops' },
 							send: [['d', 'h']],
 							down: ['h']
 						},
 						{
+							title: 'No such program',
 							say: 'If H says "D loops", then D halts at once. Wrong again. So H cannot exist.',
+							detail:
+								'The two possible answers both fail, so H gets D wrong whatever it says. The only way out is that H could never have existed. Many practical questions, such as whether a program ever reaches a given line, are undecidable for the same reason.',
 							set: { x: 'H says loops: D halts' },
 							send: [['d', 'h']],
 							down: ['h']
@@ -1866,28 +2200,43 @@ long fib(int n) {             // bottom up: n steps
 					],
 					steps: [
 						{
+							title: 'Track a set of states',
 							say: 'This NFA accepts strings that end in 01. q0 loops on every symbol. It starts in the set {q0}.',
+							detail:
+								'An NFA can be in several states at once, so we follow the set of every state it could be in. q0 has a self-loop on both 0 and 1, so it can always stay put. Its 0 edge to q1 is a guess that this 0 begins the final 01.',
 							light: ['q0']
 						},
 						{
+							title: 'Loop on 1',
 							say: 'Read 1: q0 just loops. The set is still {q0}.',
+							detail:
+								'From q0 the only move on 1 is the self-loop, since the edge to q1 needs a 0. No other state has been reached yet. This set of current states is all a simulator needs to store after each symbol.',
 							set: { in: 'Input: [1] 0 0 1' },
 							light: ['q0']
 						},
 						{
+							title: 'Branch on 0',
 							say: 'Read 0: q0 has two choices, so it takes both. It loops, and it also moves to q1. Set {q0, q1}.',
+							detail:
+								'On a 0, q0 can either stay or move to q1. An NFA does not pick one. It follows every choice at once, which is like running copies of itself in parallel.',
 							set: { in: 'Input: 1 [0] 0 1' },
 							send: [['q0', 'q1']],
 							light: ['q0', 'q1']
 						},
 						{
+							title: 'Dead path',
 							say: 'Read 0 again: q1 has no move on 0, so that path dies. q0 splits again. Set {q0, q1}.',
+							detail:
+								'q1 only has a move on 1, so the copy in q1 has nowhere to go and is dropped. The copy in q0 splits again into q0 and q1, so the set looks the same as before. A dead path does not cause rejection as long as another path survives.',
 							set: { in: 'Input: 1 0 [0] 1' },
 							send: [['q0', 'q1']],
 							light: ['q0', 'q1']
 						},
 						{
+							title: 'Some path accepts',
 							say: 'Read 1: the path in q1 moves to q2. The input ends with q2 in the set, so 1001 is accepted.',
+							detail:
+								'On 1, q0 loops and q1 moves to q2, so the final set is {q0, q2}. The NFA accepts if any state in that set is accepting. The subset construction turns each reachable set into one DFA state, so this 3-state NFA needs at most 2³ = 8 DFA states.',
 							set: { in: 'Accepted' },
 							send: [['q1', 'q2']],
 							light: ['q2', 'in']
@@ -1933,31 +2282,46 @@ S ⇒ aSb ⇒ aaSbb ⇒ aabb`,
 					edges: [{ from: 'ctrl', to: 'stack', label: 'push / pop', plain: true }],
 					steps: [
 						{
+							title: 'Push for each a',
 							say: 'Check aabb with a stack. Each a pushes a marker.',
+							detail:
+								'A pushdown automaton is a finite automaton plus a stack, a pile where you can only add or remove the top item. For every a it reads, it pushes a marker X. The stack is how it remembers how many a symbols it has seen.',
 							set: { in: 'Input: [a] a b b', stack: 'Stack\nX' },
 							send: [['ctrl', 'stack']],
 							light: ['stack']
 						},
 						{
+							title: 'Count with the stack',
 							say: 'The second a pushes another marker.',
+							detail:
+								'The stack now holds two markers, one per a. A finite automaton would need a separate state for every possible count, and it only has a fixed number of states. The stack can grow as tall as the input needs, which removes that limit.',
 							set: { in: 'Input: a [a] b b', stack: 'Stack\nX X' },
 							send: [['ctrl', 'stack']],
 							light: ['stack']
 						},
 						{
+							title: 'Pop for each b',
 							say: 'Each b pops one marker, pairing it with an a.',
+							detail:
+								'Reading a b switches the control into its b phase and pops one X, pairing it with an earlier a. From now on another a would be rejected, because every a must come before every b. The grammar rule S → aSb builds the same pairing from the outside in.',
 							set: { in: 'Input: a a [b] b', stack: 'Stack\nX', ctrl: 'Control\nreading b' },
 							send: [['stack', 'ctrl']],
 							light: ['ctrl']
 						},
 						{
+							title: 'Pop the last marker',
 							say: 'The last b pops the last marker.',
+							detail:
+								'The second b removes the second X, leaving the stack empty. If there were more b symbols than a symbols, a b would arrive with nothing to pop, and the machine would reject. Matched brackets in code are checked the same way, with ( pushing and ) popping.',
 							set: { in: 'Input: a a b [b]', stack: 'Stack\n(empty)', ctrl: 'Control\nreading b' },
 							send: [['stack', 'ctrl']],
 							light: ['ctrl']
 						},
 						{
+							title: 'Accept on empty stack',
 							say: 'The input is used up and the stack is empty, so aabb is accepted. A finite automaton cannot count like this.',
+							detail:
+								'The input is accepted only when it is fully read and the stack is empty, so every a was matched by exactly one b. Inputs like aab or abab fail: one leaves a marker behind and the other finds an a after a b. Compiler parsers use a grammar and a stack the same way to build a parse tree.',
 							set: { in: 'Accepted', ctrl: 'Control\nreading b' },
 							light: ['in', 'stack']
 						}
