@@ -69,7 +69,10 @@ f'(3) = 6      slope at x = 3
 					],
 					steps: [
 						{
+							title: 'Secant slope',
 							say: 'Take two points on the curve. The gap between them is 1, and the slope is 7.',
+							detail:
+								'A straight line through two points on a curve is called a secant. Its slope is rise over run: (16 - 9) / (4 - 3) = 7. That is the average rate of change between x = 3 and x = 4, not the rate at x = 3 itself.',
 							send: [
 								['p', 's'],
 								['q', 's']
@@ -77,17 +80,26 @@ f'(3) = 6      slope at x = 3
 							light: ['q']
 						},
 						{
+							title: 'Shrink the gap',
 							say: 'Move the second point closer: x = 3.1. The slope becomes 6.1.',
+							detail:
+								'The rise is now 9.61 - 9 = 0.61 over a run of 0.1. The slope fell from 7 to 6.1 because the curve bends, and a shorter piece of it looks more like a straight line.',
 							set: { q: 'Moving point\nx = 3.1, y = 9.61', s: 'Slope = 0.61 / 0.1 = 6.1' },
 							send: [['q', 's']]
 						},
 						{
+							title: 'Closer still',
 							say: 'Closer still: x = 3.01. The slope becomes 6.01.',
+							detail:
+								'With a gap of 0.01 the error above 6 has shrunk ten times again. For x² the secant slope between 3 and 3 + h is exactly 6 + h, so the extra part always equals the gap.',
 							set: { q: 'Moving point\nx = 3.01, y = 9.0601', s: 'Slope = 0.0601 / 0.01 = 6.01' },
 							send: [['q', 's']]
 						},
 						{
+							title: 'Take the limit',
 							say: 'As the gap shrinks to nothing, the slope settles on exactly 6. That limit is the derivative.',
+							detail:
+								'You cannot divide by a gap of zero, so instead you ask what value the slope heads towards as the gap gets tiny. The power rule gives 2x for x², and at x = 3 that is 6. It is the slope of the tangent, the line that just touches the curve there.',
 							set: { q: 'Gap shrinks to 0', s: "f'(3) = 2 × 3 = 6" },
 							light: ['s']
 						}
@@ -129,28 +141,43 @@ f'(3) = 6      slope at x = 3
 					],
 					steps: [
 						{
+							title: 'Set up the system',
 							say: 'Two equations and two unknowns. Each row is one equation.',
+							detail:
+								'Each equation is a straight line on a graph, and the answer is where the two lines cross. In matrix form this is Ax = b. The determinant is 1 × 1 - 1 × 2 = -1, which is not zero, so there is exactly one answer.',
 							light: ['r1', 'r2']
 						},
 						{
+							title: 'Eliminate x',
 							say: 'Subtract 2 × row 1 from row 2 to remove x.',
+							detail:
+								'Row 1 times 2 is 2x + 2y = 10. Taking that from 2x + y = 8 leaves -y = -2. Subtracting a multiple of one row from another never changes the answer, because you do the same thing to both sides of a true equation.',
 							send: [['r1', 'r2']],
 							set: { r2: '-y = -2' },
 							light: ['r2']
 						},
 						{
+							title: 'Solve for y',
 							say: 'Row 2 now has one unknown, so y = 2.',
+							detail:
+								'A row with a single unknown can be solved straight away: multiply both sides by -1 to get y = 2. In a bigger system, elimination carries on until the last row has one unknown, leaving a staircase shape called upper triangular form.',
 							send: [['r2', 'out']],
 							set: { r2: '-y = -2', out: 'x = ?\ny = 2' }
 						},
 						{
+							title: 'Back substitution',
 							say: 'Put y = 2 back into row 1 and you get x = 3.',
+							detail:
+								'Now work back up the rows. Row 1 becomes x + 2 = 5, so x = 3. With n unknowns you solve the last row first, then feed each answer into the row above, which is why this is called back substitution.',
 							send: [['r1', 'out']],
 							set: { r2: '-y = -2', r1: 'x + 2 = 5', out: 'x = 3\ny = 2' },
 							light: ['out']
 						},
 						{
+							title: 'Check the answer',
 							say: 'Check it: 2(3) + 2 = 8. It works.',
+							detail:
+								'Putting both values into every original equation catches arithmetic slips. Here 3 + 2 = 5 and 2 × 3 + 2 = 8, so the point (3, 2) lies on both lines. Computers do the same check with the residual, b minus A times x, which should be close to zero.',
 							set: { r2: '2(3) + 2 = 8', r1: '3 + 2 = 5', out: 'x = 3\ny = 2' },
 							light: ['r1', 'r2']
 						}
@@ -203,23 +230,42 @@ T(next) = T + step × dT/dt`,
 					],
 					steps: [
 						{
+							title: 'Work out the rate',
 							say: 'Start at 90 °C in a 20 °C room. The rate is -0.1 × (90 - 20) = -7.',
+							detail:
+								"Newton's law of cooling says the rate is proportional to the gap between the coffee and the room. With k = 0.1 per minute and a 70 °C gap, the coffee is losing 7 °C a minute right now. The minus sign means the temperature is falling.",
 							send: [['t', 'r']],
 							light: ['r']
 						},
 						{
+							title: 'Take a step',
 							say: 'Assume that rate holds for 5 minutes, so the coffee drops 35 °C.',
+							detail:
+								"Euler's method pretends the rate stays fixed for the whole step: change = step × rate = 5 × -7 = -35 °C. In reality the rate falls as the coffee cools, so this overshoots. The exact answer after 5 minutes is about 62.5 °C.",
 							send: [['r', 's']],
 							light: ['s']
 						},
-						{ say: 'New temperature: 55 °C.', send: [['s', 't']], set: { t: 'Coffee\n55 °C' } },
 						{
+							title: 'Update the state',
+							say: 'New temperature: 55 °C.',
+							detail:
+								"The new state is the old one plus the change: 90 - 35 = 55 °C. That is the whole of Euler's rule, T(next) = T + step × dT/dt. The loop then starts again from this new value.",
+							send: [['s', 't']],
+							set: { t: 'Coffee\n55 °C' }
+						},
+						{
+							title: 'Recompute the rate',
 							say: 'Cooler coffee cools more slowly: the rate is now -3.5.',
+							detail:
+								'The gap to the room is now 35 °C, so the rate is -0.1 × 35 = -3.5 °C a minute, half what it was. This is feedback inside the equation: the state sets the rate, and the rate changes the state.',
 							send: [['t', 'r']],
 							set: { t: 'Coffee\n55 °C', r: 'Rate now\n-3.5 °C/min', s: 'Step 5 min\nchange -17.5' }
 						},
 						{
+							title: 'Repeat and settle',
 							say: 'New temperature: 37.5 °C. Each step shrinks, so the curve flattens towards 20 °C.',
+							detail:
+								'Each step removes half of the remaining gap, because step × k = 0.5. The estimate creeps towards 20 °C without crossing it. With steps longer than 10 minutes it would jump past 20 °C, and beyond 20 minutes it would swing further each time.',
 							send: [['s', 't']],
 							set: {
 								t: 'Coffee\n37.5 °C',
@@ -297,32 +343,50 @@ outside ±2 sd                ≈ 4.6%, about 46 in 1000`,
 					],
 					steps: [
 						{
+							title: 'Natural variation',
 							say: 'A factory makes 1000 resistors marked 100 Ω. No two are exactly alike.',
+							detail:
+								'Small differences in material, temperature and machine wear mean every part comes out slightly different. The 100 Ω marking is the nominal value, the target. A tolerance such as ±2% says how far real parts may stray from it.',
 							light: ['lot']
 						},
 						{
+							title: 'Take a sample',
 							say: 'Testing every one is slow, so measure a sample of 30.',
+							detail:
+								'Pick parts at random, not just the first 30 off the line, or the sample may miss a drift during the shift. The uncertainty in the estimated mean shrinks with the square root of the sample size, so four times the samples halves it.',
 							send: [['lot', 'smp']],
 							light: ['smp']
 						},
 						{
+							title: 'Find the mean',
 							say: 'Their average is 100.0 Ω. That is the mean.',
+							detail:
+								'Add the 30 readings and divide by 30. The mean shows where the batch is centred, but nothing about how scattered it is. Two batches can share a mean of 100 Ω while one runs from 99 to 101 Ω and the other from 90 to 110 Ω.',
 							send: [['smp', 'mean']],
 							set: { mean: 'Mean\n100.0 Ω' }
 						},
 						{
+							title: 'Measure the spread',
 							say: 'A typical resistor sits 1 Ω from the mean. That is the standard deviation.',
+							detail:
+								"Take each reading's distance from the mean, square it, average the squares, then take the square root. For a sample you divide by n - 1, here 29, to make up for using the sample's own mean. Squaring stops values above and below the mean cancelling out.",
 							send: [['smp', 'sd']],
 							set: { mean: 'Mean\n100.0 Ω', sd: 'Spread\n1 Ω' }
 						},
 						{
+							title: 'Compare with the limits',
 							say: 'The limits are 98 to 102 Ω, which is ±2 standard deviations. About 95% pass.',
+							detail:
+								'For a normal distribution the share within k standard deviations is fixed: 68.3% within 1, 95.4% within 2, 99.7% within 3. So you only need to know how many standard deviations fit between the mean and each limit. Here 2 Ω / 1 Ω = 2.',
 							send: [['sd', 'res']],
 							set: { mean: 'Mean\n100.0 Ω', sd: 'Spread\n1 Ω', res: 'Inside 98-102 Ω:\nabout 95%' },
 							light: ['res']
 						},
 						{
+							title: 'Shrink the spread',
 							say: 'So about 46 in 1000 fail. To fix that, shrink the spread, not the average.',
+							detail:
+								'4.6% of 1000 is 46 parts, half under 98 Ω and half over 102 Ω. Moving the mean cannot help, as it is already centred. Halving the spread to 0.5 Ω puts the limits at 4 standard deviations, and only about 6 parts in 100 000 would fail.',
 							set: { mean: 'Mean\n100.0 Ω', sd: 'Spread\n1 Ω', res: 'About 46\nin 1000 fail' },
 							light: ['sd']
 						}
@@ -370,30 +434,45 @@ outside ±2 sd                ≈ 4.6%, about 46 in 1000`,
 					],
 					steps: [
 						{
+							title: 'The fundamental',
 							say: 'Start with one sine wave at the square wave’s own frequency. It is a rough match.',
+							detail:
+								"The fundamental repeats at the same rate as the square wave. Its peak is 4/π, about 1.27 times the square wave's height, so it overshoots in the middle and falls short near the edges. Even so, it carries about 81% of the signal's power.",
 							hide: ['h3', 'h5'],
 							send: [['h1', 'sum']],
 							set: { sum: 'Sum: a plain\nsine wave' }
 						},
 						{
+							title: 'Add the 3rd harmonic',
 							say: 'Add the 3rd harmonic at one third the size. The top starts to flatten.',
+							detail:
+								'The 3rd harmonic runs three times as fast. Where the fundamental peaks, it is at its lowest, so it pulls the middle down and lifts the shoulders. There are no even harmonics because the top and bottom halves of a square wave are mirror images.',
 							hide: ['h5'],
 							send: [['h3', 'sum']],
 							set: { sum: 'Sum: flatter\ntop' }
 						},
 						{
+							title: 'Add the 5th harmonic',
 							say: 'Add the 5th harmonic at one fifth the size. The edges get steeper.',
+							detail:
+								"Higher harmonics change faster, so they build the sharp rise and fall at each edge. Each is smaller than the last, because its size is 1/n. With just these three terms the sum already carries about 93% of the square wave's power.",
 							send: [['h5', 'sum']],
 							set: { sum: 'Sum: nearly\nsquare' }
 						},
 						{
+							title: 'Keep adding odd ones',
 							say: 'Keep adding odd harmonics, each smaller than the last, and the sum closes in on a square wave.',
+							detail:
+								'The full recipe is 4/π times the sum of sin(nωt) / n for every odd n. Because the sizes only shrink as 1/n, sharp edges need many terms. That is why a fast digital clock spreads energy far up the radio spectrum and can cause interference.',
 							send: [['h5', 'sum']],
 							set: { h5: 'Then 7f, 9f…\n1/7, 1/9…', sum: 'Sum: square\nwave' },
 							light: ['sum']
 						},
 						{
+							title: 'The Gibbs overshoot',
 							say: 'A small overshoot stays at each edge, however many you add. This is the Gibbs effect.',
+							detail:
+								'Near each jump the sum overshoots by about 9% of the jump size. More terms squeeze the overshoot closer to the edge but never make it shorter. Engineers see it as ringing beside sharp edges, and tapering the high harmonics reduces it.',
 							set: { h5: 'Then 7f, 9f…\n1/7, 1/9…', sum: 'Square, with\nedge overshoot' },
 							light: ['sum']
 						}
@@ -450,9 +529,18 @@ V2  = 3 mA × 2 kΩ = 6 V
 						{ from: 'r2', to: 'b' }
 					],
 					steps: [
-						{ say: 'Total resistance in series is 1 kΩ + 2 kΩ = 3 kΩ.', light: ['r1', 'r2'] },
 						{
+							title: 'Add series resistance',
+							say: 'Total resistance in series is 1 kΩ + 2 kΩ = 3 kΩ.',
+							detail:
+								'In series the same current must pass through each resistor in turn, so their opposition adds up: 1000 Ω + 2000 Ω = 3000 Ω. The battery sees the pair exactly as if it were one 3 kΩ resistor.',
+							light: ['r1', 'r2']
+						},
+						{
+							title: 'Find the current',
 							say: "Ohm's law gives the current: 9 V / 3 kΩ = 3 mA, the same everywhere in the loop.",
+							detail:
+								"Rearranged, Ohm's law gives I = V / R = 9 / 3000 = 0.003 A. There is only one path and charge cannot pile up anywhere, so every point in the loop carries the same 3 mA. This is Kirchhoff's current law at work.",
 							send: [
 								['b', 'r1'],
 								['r1', 'r2'],
@@ -460,19 +548,28 @@ V2  = 3 mA × 2 kΩ = 6 V
 							]
 						},
 						{
+							title: 'Drop across R1',
 							say: 'R1 drops 3 mA × 1 kΩ = 3 V.',
+							detail:
+								'A voltage drop is the energy each coulomb of charge gives up passing through a part. For R1, V = I × R = 0.003 × 1000 = 3 V. R1 also turns P = 3 V × 3 mA = 9 mW into heat.',
 							send: [['b', 'r1']],
 							set: { r1: 'R1 drops 3 V' },
 							light: ['r1']
 						},
 						{
+							title: 'Drop across R2',
 							say: 'R2 drops 3 mA × 2 kΩ = 6 V.',
+							detail:
+								'R2 has twice the resistance and the same current, so it takes twice the voltage. In series, voltage splits in proportion to resistance. A voltage divider uses exactly this to make a smaller voltage from a bigger one.',
 							send: [['r1', 'r2']],
 							set: { r1: 'R1 drops 3 V', r2: 'R2 drops 6 V' },
 							light: ['r2']
 						},
 						{
+							title: 'Check the loop',
 							say: 'The drops add up to 9 V, so the voltage law holds.',
+							detail:
+								"Kirchhoff's voltage law says the drops around any closed loop add up to the sources in it: 3 V + 6 V = 9 V. All the energy the battery gives is used by the resistors. If your total does not match, there is a slip in the working.",
 							set: { r1: 'R1 drops 3 V', r2: 'R2 drops 6 V' },
 							light: ['b']
 						}
@@ -518,15 +615,34 @@ a = F / m = 2000 / 1000 = 2 m/s²`,
 						{ from: 'dr', to: 'car' }
 					],
 					steps: [
-						{ say: 'Isolate the car and draw every force on it.', light: ['car'] },
 						{
+							title: 'Isolate the car',
+							say: 'Isolate the car and draw every force on it.',
+							detail:
+								"A free-body diagram shows one object on its own, with an arrow for every force acting on it. Weight and the road's support act too, but they cancel out vertically. So only the horizontal forces matter for speeding up.",
+							light: ['car']
+						},
+						{
+							title: 'Driving force',
 							say: 'The engine pushes forwards with 3000 N.',
+							detail:
+								"The engine turns the wheels, and the tyres push backwards on the road. By Newton's third law the road pushes the car forwards with an equal force, here 3000 N. That grip between tyre and road is what actually moves the car.",
 							send: [['en', 'car']],
 							light: ['en']
 						},
-						{ say: 'Drag pushes back with 1000 N.', send: [['dr', 'car']], light: ['dr'] },
 						{
+							title: 'Resisting force',
+							say: 'Drag pushes back with 1000 N.',
+							detail:
+								'Air resistance and rolling resistance push against the motion. Air drag grows roughly with the square of speed, so doubling the speed gives about four times the drag. At this moment they add up to 1000 N.',
+							send: [['dr', 'car']],
+							light: ['dr']
+						},
+						{
+							title: 'Find the net force',
 							say: 'The net force is 2000 N forwards.',
+							detail:
+								'Forces in opposite directions subtract: 3000 N - 1000 N = 2000 N forwards. Only the net force changes motion. Using the 3000 N engine force alone would overestimate the acceleration by 50%.',
 							send: [
 								['en', 'car'],
 								['dr', 'car']
@@ -534,9 +650,19 @@ a = F / m = 2000 / 1000 = 2 m/s²`,
 							set: { a: 'Net force = 2000 N' },
 							light: ['a']
 						},
-						{ say: 'a = F / m = 2000 / 1000 = 2 m/s².', set: { a: 'a = 2 m/s²' }, light: ['a'] },
 						{
+							title: 'Apply F = ma',
+							say: 'a = F / m = 2000 / 1000 = 2 m/s².',
+							detail:
+								"Newton's second law rearranged is a = F / m. An acceleration of 2 m/s² adds 2 m/s of speed every second, so after 5 s the car would be doing 10 m/s, or 36 km/h, if the forces stayed the same.",
+							set: { a: 'a = 2 m/s²' },
+							light: ['a']
+						},
+						{
+							title: 'Reach top speed',
 							say: 'As speed rises, drag grows. When drag reaches 3000 N, the forces balance and speed stays constant.',
+							detail:
+								"Because drag grows with speed, the net force and the acceleration shrink as the car speeds up. When drag equals the engine force the net force is zero, and by Newton's first law the speed stops changing. That balance point is the top speed.",
 							set: { dr: 'Drag\n3000 N', a: 'a = 0, top speed' },
 							send: [
 								['en', 'car'],
@@ -586,22 +712,34 @@ a = F / m = 2000 / 1000 = 2 m/s²`,
 					],
 					steps: [
 						{
+							title: 'Energy in',
 							say: 'A power station starts with 100 units of chemical energy in fuel.',
+							detail:
+								"Think of the units as percentages of the fuel's chemical energy. The first law says all 100 units must end up somewhere, as useful output or as losses. Following them stage by stage is called an energy balance.",
 							light: ['a']
 						},
 						{
+							title: 'Boiler stage',
 							say: 'The boiler turns it into steam at 90% efficiency.',
+							detail:
+								'Burning fuel heats water into high-pressure steam. About 10 units escape, mostly as hot exhaust gas up the chimney. Stage efficiency is useful output over input: 90 / 100 = 90%.',
 							send: [['a', 'b']],
 							set: { b: 'Boiler\n90', loss: 'Lost as heat: 10' }
 						},
 						{
+							title: 'Turbine stage',
 							say: 'The turbine turns heat into rotation. This is the biggest loss, because of the second law.',
+							detail:
+								'Steam spins the turbine and is then cooled back to water, and that heat is thrown away. The second law caps the share of heat that can become work at 1 - Tcold / Thot in kelvin, about 63% for 550 °C steam and a 30 °C condenser. This turbine gets 40 / 90, about 44%.',
 							send: [['b', 'c']],
 							set: { b: 'Boiler\n90', c: 'Turbine\n40', loss: 'Lost as heat: 60' },
 							light: ['loss']
 						},
 						{
+							title: 'Generator stage',
 							say: 'The generator makes electricity at 95% efficiency.',
+							detail:
+								'A generator turns rotation into electricity with magnets and coils. It has no heat-to-work limit, so it can be very efficient: 38 / 40 = 95%. The small loss comes from resistance in the coils, friction in the bearings and magnetic losses in the iron.',
 							send: [['c', 'd']],
 							set: {
 								b: 'Boiler\n90',
@@ -611,7 +749,10 @@ a = F / m = 2000 / 1000 = 2 m/s²`,
 							}
 						},
 						{
+							title: 'Overall efficiency',
 							say: 'Overall efficiency is 38%, and the other 62 units warm the surroundings.',
+							detail:
+								'Overall efficiency is the product of the stages: 0.9 × 0.44 × 0.95, about 0.38. The weakest stage dominates, so the turbine side is where gains pay most. Combined cycle plants reuse hot gas turbine exhaust to make steam and reach about 60%.',
 							set: {
 								b: 'Boiler\n90',
 								c: 'Turbine\n40',
@@ -678,28 +819,43 @@ a = F / m = 2000 / 1000 = 2 m/s²`,
 					],
 					steps: [
 						{
+							title: 'The loaded bar',
 							say: 'A 2 m steel bar with a 100 mm² cross-section carries a 10 kN load.',
+							detail:
+								'Convert units first, because mistakes hide there. 100 mm² is 0.0001 m², and 10 kN is 10 000 N. The load pulls along the bar, so the whole cross-section shares it evenly.',
 							send: [['load', 'bar']],
 							light: ['bar']
 						},
 						{
+							title: 'Work out stress',
 							say: 'Stress is force over area: 10 000 N / 0.0001 m² = 100 MPa.',
+							detail:
+								'Stress is force per unit area, σ = F / A, in pascals, where 1 Pa is 1 N per m². 100 MPa means every square millimetre carries 100 N. Stress lets you compare thick and thin parts on the same scale.',
 							send: [['bar', 'st']],
 							set: { st: 'Stress\n100 MPa' }
 						},
 						{
+							title: 'Work out strain',
 							say: 'Steel’s modulus is 200 GPa, so the strain is 100 MPa / 200 GPa = 0.0005.',
+							detail:
+								"In the elastic range, stress is proportional to strain. This is Hooke's law, and the constant is Young's modulus, E. So strain = 100 MPa / 200 000 MPa = 0.0005, or 0.05%. Aluminium, at 70 GPa, would stretch nearly three times as much.",
 							send: [['st', 'sn']],
 							set: { st: 'Stress\n100 MPa', sn: 'Strain\n0.0005' }
 						},
 						{
+							title: 'Find the stretch',
 							say: 'The bar stretches 0.0005 × 2 m = 1 mm. Stiff, but never perfectly rigid.',
+							detail:
+								'Strain is change in length over original length, so the stretch is ΔL = ε × L = 0.0005 × 2000 mm = 1 mm. Below yield the stretch is elastic, so the bar springs back to its full length when the load comes off.',
 							send: [['sn', 'dl']],
 							set: { st: 'Stress\n100 MPa', sn: 'Strain\n0.0005', dl: 'Stretch\n1 mm' },
 							light: ['dl']
 						},
 						{
+							title: 'Safety factor',
 							say: 'Mild steel yields at about 250 MPa, so this bar has a safety factor of 2.5.',
+							detail:
+								'The safety factor is failure stress over working stress: 250 / 100 = 2.5. The margin covers flaws, wrong load estimates and wear. Loads repeated millions of times can grow fatigue cracks well below yield, so those parts need a bigger margin.',
 							set: { st: '100 MPa of\n250 yield', sn: 'Strain\n0.0005', dl: 'Stretch\n1 mm' },
 							light: ['st']
 						}
@@ -747,21 +903,33 @@ chip = 25 °C + 50 °C = 75 °C`,
 					],
 					steps: [
 						{
+							title: 'Heat source',
 							say: 'A chip turns 50 W into heat, and all of it must reach the 25 °C air.',
+							detail:
+								'In steady state, heat leaves the chip as fast as the 50 W goes in, or its temperature keeps climbing. Heat flow works like current: a temperature difference drives it and thermal resistance opposes it. The 25 °C air is the cold end.',
 							light: ['chip']
 						},
 						{
+							title: 'Conduct through paste',
 							say: 'Conduction carries it through the thermal paste. Each watt costs 0.5 °C, so 25 °C.',
+							detail:
+								'Thermal paste fills tiny air gaps between chip and heatsink, because air conducts heat very poorly. The rise is heat flow × thermal resistance: 50 W × 0.5 °C/W = 25 °C. This is the thermal version of V = I × R.',
 							send: [['chip', 'paste']],
 							set: { paste: 'Paste\n25 °C rise' }
 						},
 						{
+							title: 'Convect into the air',
 							say: 'Convection carries it off the fins into the air: another 25 °C.',
+							detail:
+								'Heat conducts through the metal into the fins, and air moving over them carries it away. Convection rate is h × A × ΔT, where h is how readily the fluid takes heat, so the fins add area. Another 0.5 °C/W means another 25 °C rise.',
 							send: [['paste', 'sink']],
 							set: { paste: 'Paste\n25 °C rise', sink: 'Heatsink\n25 °C rise' }
 						},
 						{
+							title: 'Add the resistances',
 							say: 'The resistances are in series, so the chip sits 50 °C above the air.',
+							detail:
+								'Thermal resistances in series add like resistors: 0.5 + 0.5 = 1 °C/W, so the rise is 50 W × 1 °C/W = 50 °C. The chip temperature follows the air, so on a 35 °C day it would reach 85 °C.',
 							send: [['sink', 'air']],
 							set: {
 								paste: 'Paste\n25 °C rise',
@@ -771,7 +939,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 							light: ['temp']
 						},
 						{
+							title: 'Add a fan',
 							say: 'A fan halves the heatsink’s resistance to 0.25 °C/W. The chip drops to 62.5 °C.',
+							detail:
+								"Faster air raises the convection coefficient h, which lowers the heatsink's resistance. The total is now 0.5 + 0.25 = 0.75 °C/W, a 37.5 °C rise. The paste is now the largest resistance, so it is the next thing to improve.",
 							send: [['sink', 'air']],
 							set: {
 								paste: 'Paste\n25 °C rise',
@@ -829,24 +1000,43 @@ chip = 25 °C + 50 °C = 75 °C`,
 					],
 					steps: [
 						{
+							title: 'Raw materials',
 							say: 'Metals and minerals are mined, which has its own energy and water cost.',
+							detail:
+								'Mining, crushing and refining ore uses lots of energy, water and land. Gold, for example, often comes from ore holding only a few grams per tonne of rock. An assessment charges these impacts to the product too.',
 							light: ['a']
 						},
 						{
+							title: 'Manufacture',
 							say: 'For a smartphone, making it is usually the biggest source of carbon.',
+							detail:
+								'Making chips and screens needs clean rooms, high-purity chemicals and a lot of electricity. For a typical smartphone, studies put roughly 70 to 80% of its lifetime carbon in production. Keeping a phone a year longer spreads that cost over more use.',
 							send: [['a', 'b']],
 							light: ['b'],
 							set: { b: 'Hot spot\nfor a phone' }
 						},
-						{ say: 'It is shipped around the world.', send: [['b', 'c']], light: ['c'] },
 						{
+							title: 'Transport',
+							say: 'It is shipped around the world.',
+							detail:
+								'Most goods travel by sea, which emits far less per tonne-kilometre than air freight. For small, high-value electronics, transport is usually a small slice of the total. Flying the product instead can multiply that slice many times.',
+							send: [['b', 'c']],
+							light: ['c']
+						},
+						{
+							title: 'Use phase',
 							say: 'For a data centre server, the hot spot flips to electricity used over its life.',
+							detail:
+								'A server runs around the clock for years. One drawing 400 W all year uses about 3500 kWh, so electricity, not manufacture, dominates its footprint. A cleaner grid or a more efficient server shrinks this stage.',
 							send: [['c', 'd']],
 							light: ['d'],
 							set: { d: 'Hot spot\nfor a server' }
 						},
 						{
+							title: 'End of life',
 							say: 'At the end, it is reused, recycled or dumped. Design decisions made years earlier decide which.',
+							detail:
+								'Screws instead of glue, standard parts and labelled materials decide whether a product can be taken apart. Glued batteries and mixed plastics make recycling slow and costly, so many devices are shredded or dumped. Worldwide, under a quarter of e-waste is formally recycled.',
 							send: [['d', 'e']],
 							light: ['e']
 						}
@@ -895,7 +1085,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 					],
 					steps: [
 						{
+							title: 'Linear model',
 							say: 'Linear: make it, use it, throw it away. Every new unit needs new material.',
+							detail:
+								'In a linear economy materials flow one way, from mine to landfill. Each new unit means new mining, processing and factory emissions. Electronics in landfill can also leak lead and mercury into soil and water.',
 							hide: ['fix', 'rec'],
 							send: [
 								['make', 'use'],
@@ -904,17 +1097,26 @@ chip = 25 °C + 50 °C = 75 °C`,
 							light: ['bin']
 						},
 						{
+							title: 'Repair loop',
 							say: 'Circular: when it breaks, repair it so the same product carries on.',
+							detail:
+								'Repair keeps the most value, because the energy and materials already built into the product are kept. A new battery or screen costs a small share of the impact of a new device. That is why reuse and repair sit above recycling in the waste hierarchy.',
 							send: [['use', 'fix']],
 							light: ['fix']
 						},
 						{
+							title: 'Recover materials',
 							say: 'When it can no longer be repaired, recover the materials.',
+							detail:
+								'Recycling breaks the product down to raw materials, which throws away the effort of shaping them. Metals such as copper and gold recycle well. Many others are lost because they are used in tiny amounts or mixed into alloys.',
 							send: [['fix', 'rec']],
 							light: ['rec']
 						},
 						{
+							title: 'Close the loop',
 							say: 'Those materials go into the next product, and landfill gets much less.',
+							detail:
+								'Recycled material replaces newly mined material, so less extraction is needed. Recycled aluminium, for example, takes about 5% of the energy of making it from ore. The loop is never fully closed, so reduce and reuse still come first.',
 							send: [['rec', 'make']],
 							down: ['bin']
 						}
@@ -972,21 +1174,33 @@ chip = 25 °C + 50 °C = 75 °C`,
 					],
 					steps: [
 						{
+							title: 'Flexible work',
 							say: 'A report job can run any time tonight, so it does not need to run right now.',
+							detail:
+								'Work with a deadline but no fixed start time, such as reports, backups or model training, can be moved. Interactive work, such as loading a web page, cannot wait. Finding which jobs are flexible is the first step to scheduling them well.',
 							light: ['job']
 						},
 						{
+							title: 'Check grid carbon',
 							say: 'A carbon-aware scheduler checks the grid: it is high carbon at the moment.',
+							detail:
+								'Carbon intensity is the grams of CO₂ released per kWh of electricity, and it changes hour by hour as the mix of power plants changes. Grid operators and data services publish live figures and forecasts. A coal-heavy hour can be several times dirtier than a windy one.',
 							send: [['job', 'grid']],
 							light: ['grid']
 						},
 						{
+							title: 'Wait for clean power',
 							say: 'The job waits. A few hours later, wind power is high.',
+							detail:
+								"The scheduler compares the forecast with the job's deadline and picks the cleanest window that still finishes in time. Waiting itself uses no energy. Moving work to a region with a cleaner grid is the same idea, applied to place instead of time.",
 							set: { grid: 'Grid now\nlow carbon' },
 							light: ['grid']
 						},
 						{
+							title: 'Run on clean power',
 							say: 'The job runs on cleaner power: the same work with less carbon.',
+							detail:
+								"The job uses the same kWh either way, but each kWh now comes with less CO₂. Emissions = energy × carbon intensity, so halving the intensity halves the job's emissions. Making the code more efficient cuts the energy side of that sum.",
 							send: [['grid', 'dc']],
 							set: { grid: 'Grid now\nlow carbon' },
 							light: ['dc']
@@ -1056,19 +1270,28 @@ chip = 25 °C + 50 °C = 75 °C`,
 					],
 					steps: [
 						{
+							title: 'Scope 1: direct',
 							say: 'Start with fuel you burn yourself, in vans and gas boilers. That is scope 1: 100 t CO₂e.',
+							detail:
+								'Scope 1 covers gases released from sources you own or control, such as burning diesel or gas, or refrigerant leaks. Fuel used is multiplied by an emission factor: a litre of diesel gives about 2.7 kg of CO₂. Fuel bills make this the easiest scope to measure.',
 							hide: ['s2', 's3'],
 							send: [['s1', 'co']],
 							set: { s1: 'Scope 1\n100 t', tot: 'Total: 100 t' }
 						},
 						{
+							title: 'Scope 2: bought energy',
 							say: 'Add the electricity you buy. The power station is elsewhere, but you caused it: 200 t.',
+							detail:
+								"Scope 2 is kWh from your bills times an emission factor for the grid. The power station counts the same tonnes as its own scope 1, so keeping them in your scope 2 stops them sitting in two companies' scope 1. You can report a grid average or a figure based on your supplier contract.",
 							hide: ['s3'],
 							send: [['s2', 'co']],
 							set: { s1: 'Scope 1\n100 t', s2: 'Scope 2\n200 t', tot: 'Total: 300 t' }
 						},
 						{
+							title: 'Scope 3: value chain',
 							say: 'Now the value chain: suppliers making your goods and customers using them. 1700 t.',
+							detail:
+								'Scope 3 has 15 categories, upstream and downstream: bought goods, business travel, commuting, use of sold products, disposal and more. Data often comes from suppliers or from spend-based estimates, such as kg of CO₂e per pound spent. It is the hardest scope to measure and the least precise.',
 							send: [['s3', 'co']],
 							set: {
 								s1: 'Scope 1\n100 t',
@@ -1079,7 +1302,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 							light: ['tot']
 						},
 						{
+							title: 'Find the biggest share',
 							say: 'Scope 3 is 85% of the total. Counting only scopes 1 and 2 would miss most of it.',
+							detail:
+								'1700 / 2000 = 0.85, so 85%. For many firms scope 3 is well over half the total, and for retailers and manufacturers it can top 90%. Leaving it out can make a company look far cleaner than its products really are.',
 							set: {
 								s1: 'Scope 1\n100 t',
 								s2: 'Scope 2\n200 t',
@@ -1089,7 +1315,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 							light: ['s3']
 						},
 						{
+							title: 'Pick a lever per scope',
 							say: 'Each scope has its own lever: electric vans, a clean power contract, and work with suppliers.',
+							detail:
+								'Scope 1 falls by switching fuels, such as electric vans, and scope 2 by using less power or buying clean power. Scope 3 needs influence rather than control: supplier targets, lower-carbon materials and products that use less energy. Track every cut against a fixed baseline year.',
 							set: {
 								s1: 'Electric\nvans',
 								s2: 'Clean power\ncontract',
@@ -1155,7 +1384,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 					],
 					steps: [
 						{
+							title: 'Solar at noon',
 							say: 'At noon the sun is strong, and solar alone covers the homes.',
+							detail:
+								"Solar output follows the sun, peaking around midday and falling to zero at night. A panel's rating is its output in full test sunlight of 1000 W per m², which it rarely sees for long. Across a year, UK solar has a capacity factor of only about 10%.",
 							send: [
 								['sun', 'grid'],
 								['grid', 'homes']
@@ -1163,7 +1395,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 							light: ['sun']
 						},
 						{
+							title: 'Store the surplus',
 							say: 'There is more than the homes need, so the surplus charges the battery instead of going to waste.',
+							detail:
+								'Supply and demand must match every second, or the grid frequency drifts from its 50 Hz target. Charging a battery soaks up the extra instead of switching panels off, which is called curtailment. Lithium-ion batteries give back about 85 to 90% of the energy put in.',
 							send: [
 								['sun', 'grid'],
 								['grid', 'batt']
@@ -1171,12 +1406,18 @@ chip = 25 °C + 50 °C = 75 °C`,
 							set: { batt: 'Battery\ncharging' }
 						},
 						{
+							title: 'Evening peak',
 							say: 'In the evening the sun sets just as people get home and demand peaks.',
+							detail:
+								'Demand rises in the early evening as people cook, light their homes and switch things on, just as solar fades. The steep ramp other sources must cover is called the duck curve, after the shape of the graph. Planners must fill it every day.',
 							set: { batt: 'Battery\nfull', homes: 'Homes\npeak demand' },
 							down: ['sun']
 						},
 						{
+							title: 'Battery and wind',
 							say: 'The battery gives back what it stored, and the wind tops up the rest.',
+							detail:
+								'The battery covers part of the peak, and wind, which often blows at night, adds the rest. A battery has a power rating in MW and an energy size in MWh, so a 100 MW, 400 MWh battery can run flat out for 4 hours. That shifts solar into the evening, but cannot cover days.',
 							send: [
 								['batt', 'grid'],
 								['wind', 'grid'],
@@ -1186,7 +1427,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 							down: ['sun']
 						},
 						{
+							title: 'Cover long gaps',
 							say: 'A calm, dark week is too long for batteries. Backup plants or links to other regions must cover it.',
+							detail:
+								'Winter spells with little wind or sun can last a week or more. Storing enough for that in batteries would cost far too much, so grids rely on gas or hydro plants, links to other countries and cutting flexible demand. These rare spells set how much backup a grid needs.',
 							set: { batt: 'Battery\nempty', wind: 'Wind\ncalm' },
 							down: ['sun', 'wind'],
 							light: ['grid']
@@ -1242,7 +1486,10 @@ chip = 25 °C + 50 °C = 75 °C`,
 					],
 					steps: [
 						{
+							title: 'Sense the room',
 							say: 'The target is 22 °C. The sensor reports the room is at 18 °C.',
+							detail:
+								'The sensor measures the room and sends the reading back to the thermostat, which compares it with the target. Without this feedback the controller would be guessing. It could not react to an open window or a sunny afternoon.',
 							send: [
 								['room', 'sen'],
 								['sen', 'ctl']
@@ -1250,17 +1497,26 @@ chip = 25 °C + 50 °C = 75 °C`,
 							light: ['ctl']
 						},
 						{
+							title: 'Act on the error',
 							say: 'The error is 4 °C, so the thermostat switches the heater on.',
+							detail:
+								'Error = target - measured = 22 - 18 = 4 °C. A simple on-off thermostat only checks whether the error is above or below zero. More advanced controllers, such as PID, respond harder when the error is bigger.',
 							send: [['ctl', 'heat']],
 							set: { heat: 'Heater\non' }
 						},
 						{
+							title: 'The room responds',
 							say: 'The room warms up.',
+							detail:
+								'The heater adds energy and the room warms slowly, because the walls, furniture and air store heat. This lag means the room keeps warming for a while after the heater turns off. Lags like this are why feedback loops can overshoot.',
 							send: [['heat', 'room']],
 							set: { heat: 'Heater\non', room: 'Room\n22 °C' }
 						},
 						{
+							title: 'The loop closes',
 							say: 'The sensor reports 22 °C, so the heater goes off. No part knows the whole plan, but the loop does the job.',
+							detail:
+								'With no error left the heater switches off, and the loop waits for the next drop. Real thermostats add a small band, say ±0.5 °C, so the heater does not flick on and off every few seconds. Holding the target is an emergent behaviour of the loop.',
 							send: [
 								['room', 'sen'],
 								['sen', 'ctl']
@@ -1302,9 +1558,18 @@ chip = 25 °C + 50 °C = 75 °C`,
 						{ from: 'det', to: 'unit', dashed: true, plain: true }
 					],
 					steps: [
-						{ say: 'Go down the left: define what the system must do.', light: ['req'] },
 						{
+							title: 'Define requirements',
+							say: 'Go down the left: define what the system must do.',
+							detail:
+								'Requirements say what the system must do and how well, without saying how. Each one should be measurable, so it can be proved later. The team plans the acceptance tests that will check them at the same time.',
+							light: ['req']
+						},
+						{
+							title: 'Break it down',
 							say: 'Split it into subsystems, then into detailed parts.',
+							detail:
+								'System design splits the whole into subsystems and fixes the interfaces between them. Detailed design then specifies each part closely enough to build it. Each level also gets a matching test plan, shown by the dashed lines across the V.',
 							send: [
 								['req', 'des'],
 								['des', 'det']
@@ -1312,22 +1577,34 @@ chip = 25 °C + 50 °C = 75 °C`,
 							light: ['des', 'det']
 						},
 						{
+							title: 'Build at the bottom',
 							say: 'Write the code at the bottom of the V.',
+							detail:
+								'Implementation turns the detailed design into code or hardware. It is the only stage that makes the product itself, while everything above it plans and everything to the right checks. A fault caught here costs far less to fix than one found at acceptance.',
 							send: [['det', 'code']],
 							light: ['code']
 						},
 						{
+							title: 'Unit testing',
 							say: 'Climb the right side: unit tests check the detailed design.',
+							detail:
+								'Unit tests check each small part on its own against the detailed design, often automatically on every change. When one fails, the fault is in a small piece of code, so it is quick to find. Unit tests alone cannot show that the parts work together.',
 							send: [['code', 'unit']],
 							light: ['unit', 'det']
 						},
 						{
+							title: 'Integration testing',
 							say: 'Integration tests check that the parts work together as designed.',
+							detail:
+								'Integration tests join parts and check the interfaces between them against the system design. Many faults hide here: mismatched units, timing problems, or two teams reading one interface differently. NASA lost the Mars Climate Orbiter in 1999 to a pound-force versus newton mix-up.',
 							send: [['unit', 'int']],
 							light: ['int', 'des']
 						},
 						{
+							title: 'Acceptance testing',
 							say: 'Acceptance tests check the system against the original requirements.',
+							detail:
+								'Acceptance tests check the finished system against the requirements, often with the customer watching. This is validation: did we build the right thing? Because the tests were planned at the top left, there is little room to argue about what passing means.',
 							send: [['int', 'acc']],
 							light: ['acc', 'req']
 						}
@@ -1354,7 +1631,7 @@ chip = 25 °C + 50 °C = 75 °C`,
 				],
 				sketch: {
 					kind: 'Risk scoring',
-					alt: 'A sensor failure is scored for severity, occurrence and detection, giving a risk number of 252. Adding a backup sensor lowers it to 36.',
+					alt: 'A sensor failure is scored for severity, occurrence and detection, giving a risk number of 252. Adding a self-check lowers it to 36.',
 					h: 195,
 					nodes: [
 						{
@@ -1377,9 +1654,18 @@ chip = 25 °C + 50 °C = 75 °C`,
 						{ from: 'f', to: 'd' }
 					],
 					steps: [
-						{ say: 'Pick one way the system could fail.', light: ['f'] },
 						{
+							title: 'Choose a failure mode',
+							say: 'Pick one way the system could fail.',
+							detail:
+								'A failure mode is one specific way a part stops doing its job, such as a sensor giving no signal, a stuck reading or a noisy one. Teams list the modes for each part, often by walking through a block diagram. Each mode is scored on its own.',
+							light: ['f']
+						},
+						{
+							title: 'Score three factors',
 							say: 'Score how bad it is, how likely it is, and how hard it is to detect.',
+							detail:
+								'Each factor is rated 1 to 10 from a shared table. Severity 9 means a safety risk, occurrence 4 means it happens now and then, and detection 7 means it is hard to catch in time. A high detection score is bad, because the failure goes unnoticed.',
 							send: [
 								['f', 's'],
 								['f', 'o'],
@@ -1387,16 +1673,25 @@ chip = 25 °C + 50 °C = 75 °C`,
 							]
 						},
 						{
+							title: 'Calculate the RPN',
 							say: 'Multiply them: 9 × 4 × 7 = 252. That goes to the top of the list.',
+							detail:
+								'The risk priority number runs from 1 to 1000. Sorting every failure mode by RPN shows where to spend effort first. Many teams also act on any severity of 9 or 10, whatever its RPN.',
 							light: ['r']
 						},
 						{
+							title: 'Improve detection',
 							say: 'Add a self-check, so a dead sensor is spotted right away. Detection drops to 1.',
+							detail:
+								'A self-check, such as watching for a signal that stops changing, catches the failure as soon as it happens. The RPN becomes 9 × 4 × 1 = 36. The failure still happens just as often, but now the system can warn the driver or switch to a safe mode.',
 							set: { d: 'Detection\n1', r: 'RPN = 36' },
 							light: ['d']
 						},
 						{
+							title: 'Severity stays high',
 							say: 'Severity is still 9, so keep a backup in the design as well.',
+							detail:
+								'Detection and occurrence can be designed down, but severity comes from what the failure does, so it rarely changes. A redundant sensor keeps the brakes working when one fails. For cars, the safety standard ISO 26262 sets what a failure this severe demands.',
 							set: { d: 'Detection\n1', r: 'RPN = 36' },
 							light: ['s']
 						}
@@ -1457,28 +1752,43 @@ Good: The pump shall reach 90% of rated flow
 					],
 					steps: [
 						{
+							title: 'Start from a need',
 							say: 'A user needs water as soon as they turn the tap on.',
+							detail:
+								"A stakeholder need is written in the user's own words and says nothing about pumps or flow rates. Requirements turn it into something engineers can build and test. Keeping the need on record lets you check later that it was really met.",
 							light: ['need']
 						},
 						{
+							title: 'Spot vague words',
 							say: 'First draft: the pump shall start quickly. But how quick is quick?',
+							detail:
+								'Words like quickly, easy or robust mean different things to different readers. A designer might read quickly as 10 s while the customer expects 1 s. Neither is wrong, which is exactly the problem.',
 							send: [['need', 'req']],
 							set: { req: 'Pump shall\nstart quickly' },
 							light: ['req']
 						},
 						{
+							title: 'Try to test it',
 							say: 'Try to write its test, and you cannot. Nobody can say pass or fail.',
+							detail:
+								'A requirement is verifiable if a test, analysis, inspection or demonstration can prove it is met. Writing the test early is the quickest way to catch a vague one. Left until acceptance, the argument arrives when changes cost the most.',
 							send: [['req', 'test']],
 							set: { req: 'Pump shall\nstart quickly', test: 'Test: ???' },
 							down: ['test']
 						},
 						{
+							title: 'Add numbers',
 							say: 'Rewrite it with numbers: 90% of rated flow within 2 s, at 5 to 40 °C.',
+							detail:
+								'A good requirement gives a measurable quantity, a limit and the conditions it holds under. Here the quantity is flow, the limit is 90% within 2 s, and the conditions are 5 to 40 °C. Each number should come from the need or a calculation, not a guess.',
 							set: { req: '90% flow\nwithin 2 s', test: 'Test: ???' },
 							light: ['req']
 						},
 						{
+							title: 'Test and design follow',
 							say: 'Now the test writes itself, and the design team knows its target.',
+							detail:
+								'The test is a simple procedure: send the start command, time the flow, and check it reaches 90% within 2 s. Designers can size the pump and motor against a firm target. Each link from need to requirement to test and design is kept in a traceability matrix.',
 							send: [
 								['req', 'test'],
 								['req', 'des']
@@ -1491,7 +1801,10 @@ Good: The pump shall reach 90% of rated flow
 							light: ['test', 'des']
 						},
 						{
+							title: 'Trace back the failure',
 							say: 'If the test ever fails, the links show exactly which user need is at risk.',
+							detail:
+								'Traceability works both ways. Downwards it shows which tests prove each requirement. Upwards, a failed test points straight to the requirement and user need it puts at risk, so you can judge how serious it is and who to tell.',
 							send: [
 								['test', 'req'],
 								['req', 'need']
@@ -1553,12 +1866,18 @@ mixed:    0.99 × 0.9 × 0.9 ≈ 0.80`,
 					],
 					steps: [
 						{
+							title: 'Three parts in series',
 							say: 'A cooling loop needs its pump, valve and controller all working. Each has a 90% chance of lasting the year.',
+							detail:
+								'Reliability here is the chance a part lasts a year without failing, so 0.9 means a 10% chance of failure. In a reliability block diagram, parts drawn in a line must all work for the system to work. We assume each part fails independently.',
 							hide: ['spare'],
 							light: ['pump', 'valve', 'ctl']
 						},
 						{
+							title: 'Multiply in series',
 							say: 'In series, multiply: 0.9 × 0.9 × 0.9 = 0.729. Three good parts make a weaker whole.',
+							detail:
+								'For independent parts in series, R = R1 × R2 × R3. The result is always below the weakest part and falls fast as parts are added: ten parts at 0.9 give only about 0.35. Long chains need very reliable parts.',
 							hide: ['spare'],
 							send: [
 								['pump', 'valve'],
@@ -1568,19 +1887,28 @@ mixed:    0.99 × 0.9 × 0.9 ≈ 0.80`,
 							set: { sys: 'System = 0.729' }
 						},
 						{
+							title: 'Single point of failure',
 							say: 'If the pump fails, the whole loop stops.',
+							detail:
+								'A part whose failure alone stops the whole system is called a single point of failure. In a series chain, every part is one. With a single pump, one worn bearing or seal ends the cooling.',
 							hide: ['spare'],
 							set: { sys: 'System down' },
 							down: ['pump']
 						},
 						{
+							title: 'Add a backup',
 							say: 'Add a backup pump in parallel. Both must fail to lose pumping: 0.1 × 0.1 = 0.01.',
+							detail:
+								'In parallel, pumping is lost only if both pumps fail, so the pair has a reliability of 1 - 0.01 = 0.99. That sum only holds if the pumps fail independently. A shared power supply or shared pipework would undo much of the gain.',
 							send: [['spare', 'valve']],
 							set: { sys: 'Pumps = 0.99' },
 							light: ['spare', 'pump']
 						},
 						{
+							title: 'New system reliability',
 							say: 'The system rises to 0.99 × 0.9 × 0.9, about 0.80.',
+							detail:
+								'Treat the parallel pair as one block with R = 0.99, then multiply along the chain: 0.99 × 0.81 = 0.802. One backup lifted the system from 73% to 80%. Most of the remaining risk now sits in the other two parts.',
 							send: [
 								['spare', 'valve'],
 								['valve', 'ctl'],
@@ -1590,7 +1918,10 @@ mixed:    0.99 × 0.9 × 0.9 ≈ 0.80`,
 							light: ['sys']
 						},
 						{
+							title: 'Find the next weak link',
 							say: 'Now the valve and controller are the weak links. Look there next.',
+							detail:
+								'The valve and controller are still single points of failure, each with a 10% chance of failing. Even perfect pumps would cap the system at 0.81. Engineers weigh the cost of each upgrade against its gain before adding more backups or better parts.',
 							set: { sys: 'System ≈ 0.80' },
 							light: ['valve', 'ctl']
 						}

@@ -32,27 +32,42 @@
 		],
 		steps: [
 			{
+				title: 'Send the request',
 				say: 'You click a link, and your request sets off.',
+				detail:
+					'Your browser looks up the site address with DNS, opens a connection and sends an HTTP request. The first stop is not an app server but the load balancer, the single public front door. With HTTPS, the request is encrypted before it leaves your machine.',
 				send: [['user', 'lb']],
 				light: ['user']
 			},
 			{
+				title: 'Pick a server',
 				say: 'A load balancer picks a server that is not busy.',
+				detail:
+					'The load balancer keeps a list of healthy servers and chooses one for each request, often by taking them in turn or picking the least busy. Because any server can answer, you can add more when traffic grows. This is called horizontal scaling.',
 				send: [['lb', 'a']],
 				light: ['lb']
 			},
 			{
+				title: 'Check the cache',
 				say: 'The server checks the cache, the quickest place to look.',
+				detail:
+					'A cache keeps recent answers in memory, where a lookup takes well under a millisecond. If the answer is there, the server replies without touching the database at all. Popular pages are often served this way thousands of times in a row.',
 				send: [['a', 'cache']],
 				light: ['cache']
 			},
 			{
+				title: 'Ask the database',
 				say: 'It is not there, so the server asks the database.',
+				detail:
+					'On a cache miss, the server queries the database, the one place the data is stored for good. That is slower, often several milliseconds or more, because it may read from disk and must keep data consistent. The server usually saves the result in the cache so the next request is quick.',
 				send: [['a', 'db']],
 				light: ['db']
 			},
 			{
+				title: 'Survive a failure',
 				say: 'If one server dies, the other carries on and you never notice.',
+				detail:
+					'The load balancer checks each server regularly, and after a few failed checks it stops sending traffic to the dead one. Both servers share the same database, so either can answer any request. Running at least two of everything is the simplest way to avoid a single point of failure.',
 				down: ['a'],
 				send: [
 					['lb', 'b'],
@@ -154,9 +169,7 @@
 <style>
 	.hero {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 2.5rem;
-		align-items: center;
+		gap: 1.5rem;
 		margin-block: 1rem 3.5rem;
 	}
 
@@ -224,12 +237,6 @@
 
 		li:hover {
 			rotate: 0deg;
-		}
-	}
-
-	@media (max-width: 52rem) {
-		.hero {
-			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 </style>

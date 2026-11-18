@@ -39,7 +39,6 @@
 
 <style>
 	.path {
-		max-width: 34rem;
 		margin-top: 1.5rem;
 	}
 

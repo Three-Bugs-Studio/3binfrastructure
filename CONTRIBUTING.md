@@ -44,9 +44,9 @@ Everything on the site lives in plain TypeScript data files, so most changes nee
 
 Diagrams are lists of nodes and edges. Node `x` and `y` are the centre of the shape, on a canvas 480 wide and `h` tall.
 
-Every topic needs an animated demo. Each entry in `steps` describes one whole picture: `say` is the caption, `send` moves dots between nodes, and `light`, `down`, `hide` and `set` circle, cross out, hide or relabel nodes for that step. A caption starting `SKIPPED:` or `SET UP:` gets a coloured stamp.
+Every topic needs an animated demo. Each entry in `steps` describes one whole picture: `title` is a short name (28 characters at most, it also labels the Next button), `say` is the caption, `detail` explains how that step works in two or three more sentences, `send` moves dots between nodes, and `light`, `down`, `hide` and `set` circle, cross out, hide or relabel nodes for that step. A caption starting `SKIPPED:` or `SET UP:` gets a coloured stamp.
 
-`npm test` fails if a topic has no demo, a node leaves the canvas or overlaps another, or a step mentions a node that does not exist.
+`npm test` fails if a topic has no demo, a step has no title or detail, a node leaves the canvas or overlaps another, or a step mentions a node that does not exist.
 
 Please keep the writing plain and accurate, and link course pages that are free to open.
 

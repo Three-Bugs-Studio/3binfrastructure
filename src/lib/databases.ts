@@ -31,19 +31,34 @@ GROUP BY c.id, c.name;`,
 		sketch: {
 			kind: 'Entity relationship diagram',
 			steps: [
-				{ say: 'Each customer lives in one row, in one table.', light: ['cust'] },
 				{
+					title: 'One row per customer',
+					say: 'Each customer lives in one row, in one table.',
+					detail:
+						'The customers table has an id column marked as the primary key, so no two rows can share a value. Name and email are stored only here, so a change is made once and every order that points at this row sees it straight away.',
+					light: ['cust']
+				},
+				{
+					title: 'Point with a foreign key',
 					say: 'Every order stores the id of its customer in customer_id.',
+					detail:
+						'The orders table does not copy the customer name or email. It keeps just the number from customers.id, and many orders can hold the same number. That is a one-to-many relationship, declared in SQL with REFERENCES customers(id).',
 					send: [['ord', 'cust']],
 					light: ['ord']
 				},
 				{
+					title: 'Join the tables',
 					say: 'A JOIN follows that key and brings both tables back together.',
+					detail:
+						'The database matches each orders.customer_id with the customers.id that has the same value, then glues the two rows into one result row. A LEFT JOIN, as in the example query, also keeps customers with no orders yet, filling the order columns with NULL.',
 					send: [['cust', 'ord']],
 					light: ['cust', 'ord']
 				},
 				{
+					title: 'Foreign key check',
 					say: 'Try to save an order for customer 99, who does not exist. The foreign key rejects it.',
+					detail:
+						'Before the insert is saved, the database looks for a row in customers with id 99. It finds none, so the statement fails with a foreign key violation and nothing is written. Without the constraint, the order would point at nobody, and an inner join would quietly drop it.',
 					set: { ord: 'orders\ncustomer_id = 99\nrejected' },
 					down: ['ord'],
 					send: [['ord', 'cust']]
@@ -97,25 +112,44 @@ GROUP BY c.id, c.name;`,
 			kind: 'Schema diagram',
 			steps: [
 				{
+					title: 'Repeat on every order',
 					say: 'One table repeats the customer on every single order.',
+					detail:
+						'Here the customer name and email are typed into every order row, so a customer with twenty orders has twenty copies. The table works, but it wastes space and gives the same fact many chances to go out of date.',
 					hide: ['cust', 'ord'],
 					light: ['before']
 				},
 				{
+					title: 'The update anomaly',
 					say: 'Changing one email means updating many rows. Miss one, and the data disagrees with itself.',
+					detail:
+						'To change an email, an UPDATE must reach every row for that customer. If one row is missed, two emails now claim to be current and no query can tell which is right. This is called an update anomaly, and normalization exists to prevent it.',
 					hide: ['cust', 'ord'],
 					set: { before: 'orders\nann@old.com, ann@new.com, ann@old.com' },
 					down: ['before']
 				},
 				{
+					title: 'Move customers out',
 					say: 'Split the customer details into their own table.',
+					detail:
+						'Name and email depend on who the customer is, not on the order, so they move to a new customers table with its own id as the primary key. Each customer now appears once. This removes a transitive dependency, which is what third normal form asks for.',
 					hide: ['ord'],
 					send: [['before', 'cust']],
 					light: ['cust']
 				},
-				{ say: 'Orders keep only a customer_id.', send: [['before', 'ord']], light: ['ord'] },
 				{
+					title: 'Keep only the key',
+					say: 'Orders keep only a customer_id.',
+					detail:
+						'The new orders table holds id, item and a customer_id that points at the customers table. A foreign key constraint makes sure that id really exists. To show the name next to an order again, a query joins the two tables on customer_id.',
+					send: [['before', 'ord']],
+					light: ['ord']
+				},
+				{
+					title: 'One fact, one row',
 					say: 'Each fact now lives in one row, so one update fixes it everywhere.',
+					detail:
+						'Changing an email is now a single-row UPDATE on customers, and every order sees the new value through the join. The price is a join on reads, which an index on customer_id keeps cheap. Denormalise only after measuring that the join is too slow.',
 					hide: ['before'],
 					light: ['cust']
 				}
@@ -191,35 +225,53 @@ COMMIT;`,
 			kind: 'Flowchart',
 			steps: [
 				{
+					title: 'Open the transaction',
 					say: 'BEGIN opens the transaction. Nothing is final yet.',
+					detail:
+						'From BEGIN until COMMIT, every change is tentative. Other sessions do not see it yet, and the database keeps enough information to undo each step. In PostgreSQL, a statement run without BEGIN is wrapped in its own one-statement transaction automatically.',
 					hide: ['roll'],
 					light: ['begin']
 				},
 				{
+					title: 'Debit account 1',
 					say: 'Take 100 from account 1.',
+					detail:
+						'The UPDATE lowers the balance of account 1, but the change is visible only inside this transaction. The database also locks that row, so another transaction trying to change the same account must wait until this one finishes.',
 					hide: ['roll'],
 					send: [['begin', 'debit']],
 					light: ['debit']
 				},
 				{
+					title: 'Credit account 2',
 					say: 'Add 100 to account 2.',
+					detail:
+						'The second UPDATE raises the balance of account 2, still tentative. Between the two statements the money is briefly in neither account, but no other session can see that halfway state. That is isolation doing its job.',
 					hide: ['roll'],
 					send: [['debit', 'credit']],
 					light: ['credit']
 				},
 				{
+					title: 'Commit both changes',
 					say: 'Both steps worked, so COMMIT makes them permanent together.',
+					detail:
+						'COMMIT writes a commit record to the write-ahead log and flushes it to disk before reporting success. From then on both updates are visible to everyone and survive a crash, because the log is replayed on restart. That is the D in ACID.',
 					hide: ['roll'],
 					send: [['credit', 'commit']],
 					light: ['commit']
 				},
 				{
+					title: 'A failure halfway',
 					say: 'Now replay it, but the credit fails halfway through.',
+					detail:
+						'Perhaps account 2 has been closed, a constraint fails, or the server loses power. The debit has already run, so keeping the work done so far would make 100 disappear. Atomicity is the rule that stops a half-done transaction from ever becoming permanent.',
 					send: [['debit', 'credit']],
 					down: ['credit', 'commit']
 				},
 				{
+					title: 'Roll back the change',
 					say: 'ROLLBACK undoes the debit, as if nothing had happened. No money vanishes.',
+					detail:
+						'ROLLBACK throws away every change made since BEGIN, so account 1 is back to its old balance. In PostgreSQL, once a statement fails inside a transaction, every later command is refused until you roll back. After a crash, unfinished transactions are discarded the same way.',
 					send: [['credit', 'roll']],
 					down: ['credit', 'commit'],
 					light: ['roll']
@@ -298,24 +350,36 @@ COMMIT;`,
 			],
 			steps: [
 				{
+					title: 'First read',
 					say: 'Transaction 1 reads the row and sees 100.',
+					detail:
+						'Transaction 1 has started and reads the row. Under read committed, the PostgreSQL default, each statement takes a fresh snapshot of committed data at the moment it starts. So this read sees 100, the latest committed value.',
 					hide: ['c2', 'b2', 'a3', 'b3'],
 					send: [['a1', 'b1']],
 					light: ['t1']
 				},
 				{
+					title: 'Another transaction writes',
 					say: 'Transaction 2 changes it to 200 and commits.',
+					detail:
+						'Transaction 2 runs in its own session and updates the same row. Transaction 1 is only reading, so nothing blocks the write. Once Transaction 2 commits, 200 becomes the newest committed value for any snapshot taken after that point.',
 					hide: ['a3', 'b3'],
 					send: [['c2', 'b2']],
 					light: ['t2']
 				},
 				{
+					title: 'Non-repeatable read',
 					say: 'Transaction 1 reads the same row again and gets 200. That is a non-repeatable read.',
+					detail:
+						'Transaction 1 is still open, but its second statement takes a new snapshot that includes the commit. Code that reads a value and then acts on it can go wrong this way, for example approving a payment against a balance that has since changed.',
 					send: [['a3', 'b3']],
 					light: ['t1']
 				},
 				{
+					title: 'Repeatable read instead',
 					say: 'At repeatable read, Transaction 1 would keep seeing 100 until it finishes.',
+					detail:
+						'At repeatable read, PostgreSQL takes one snapshot at the first statement and keeps it for the whole transaction. If Transaction 1 then tries to update that row, it gets a serialization failure and must retry. Stronger levels trade some retries for fewer surprises.',
 					set: { t1: 'still sees 100' },
 					light: ['t1']
 				}
@@ -392,30 +456,45 @@ COMMIT;                                                -- lock released`,
 			],
 			steps: [
 				{
+					title: 'The current version',
 					say: 'Version 1 of the row says the balance is 100.',
+					detail:
+						'In PostgreSQL every row version carries hidden fields saying which transaction created it, called xmin, and which one replaced or deleted it, called xmax. Version 1 was committed earlier, so every new snapshot can see it.',
 					hide: ['v2', 'w2'],
 					light: ['v1']
 				},
 				{
+					title: 'Write a new version',
 					say: 'Writer 1 updates it to 50. That creates version 2, not yet committed.',
+					detail:
+						'PostgreSQL does not overwrite the old row. It writes a new version with balance 50 and marks version 1 as replaced by Writer 1. Until Writer 1 commits, only Writer 1 itself can see version 2.',
 					hide: ['w2'],
 					send: [['w', 'v2']],
 					light: ['v2']
 				},
 				{
+					title: 'Readers never wait',
 					say: 'A reader at the same moment is not blocked. Its snapshot still shows version 1.',
+					detail:
+						'The reader checks each version against its snapshot. Version 2 belongs to a transaction that has not committed, so it is skipped and version 1 is returned. A plain SELECT takes no row locks, so reads and writes run side by side.',
 					hide: ['w2'],
 					send: [['r', 'v1']],
 					light: ['r']
 				},
 				{
+					title: 'Writers queue up',
 					say: 'Writer 2 wants the same row. Writers do lock, so it waits for Writer 1 to commit.',
+					detail:
+						'Two new versions of one row cannot both win, so Writer 2 waits on the row lock Writer 1 holds until Writer 1 commits or rolls back. If two writers each waited on a row the other held, PostgreSQL would spot the deadlock after about a second and abort one.',
 					send: [['w2', 'v2']],
 					set: { w2: 'Writer 2\nwaiting' },
 					light: ['w2']
 				},
 				{
+					title: 'Commit and clean up',
 					say: 'Writer 1 commits and Writer 2 goes ahead. Once no snapshot needs version 1, VACUUM removes it.',
+					detail:
+						'When Writer 1 commits, Writer 2 wakes up and, at read committed, applies its change on top of version 2. Version 1 becomes a dead row once no open snapshot can see it. VACUUM then frees its space, though one very long transaction can hold that cleanup back.',
 					set: { w2: 'Writer 2\nruns' },
 					down: ['v1']
 				}
@@ -495,30 +574,45 @@ recovery_target_time = '2026-11-15 14:59:00'
 			],
 			steps: [
 				{
+					title: 'Take a base backup',
 					say: 'At 02:00 a base backup copies the whole database.',
+					detail:
+						'pg_basebackup copies every data file of the running cluster without stopping it. The files keep changing during the copy, so the backup alone is not consistent. The WAL written during the copy must be replayed on restore to make it whole.',
 					hide: ['db'],
 					light: ['bb']
 				},
 				{
+					title: 'Archive every WAL file',
 					say: 'All day long, every finished WAL file is copied to the archive.',
+					detail:
+						'PostgreSQL records every change in write-ahead log files of 16 MB by default. When a file is full, archive_command copies it to safe storage, ideally on another machine. The base backup plus these files hold the full history since 02:00.',
 					hide: ['db'],
 					send: [['bb', 'wal']],
 					light: ['wal']
 				},
 				{
+					title: 'The bad DELETE',
 					say: 'At 15:00 someone runs DELETE without a WHERE. The replicas copy it at once.',
+					detail:
+						'The DELETE is a valid, committed transaction, so the database has no reason to refuse it. Replication streams it to every replica within moments, and it lands in the WAL archive too. Failing over would not help, because every copy now agrees the rows are gone.',
 					hide: ['db'],
 					send: [['wal', 'bad']],
 					light: ['bad']
 				},
 				{
+					title: 'Restore the base backup',
 					say: 'Restore the base backup onto a fresh server.',
+					detail:
+						'The base backup files are copied into an empty data directory on a new server. Working on a separate machine leaves the damaged primary untouched, so you can still compare against it. At this point the restored data is as it was at 02:00.',
 					send: [['bb', 'db']],
 					set: { db: 'Restored\n02:00' },
 					light: ['db']
 				},
 				{
+					title: 'Replay up to 14:59',
 					say: 'Replay the WAL up to 14:59, one minute before the mistake, and stop there.',
+					detail:
+						'With recovery_target_time set and a recovery.signal file present, PostgreSQL fetches each WAL file through restore_command and replays it. It stops before the first commit after 14:59, so the DELETE never happens. Any other changes made after 14:59 are lost too.',
 					send: [['wal', 'db']],
 					set: { db: 'Restored\n14:59' },
 					down: ['bad'],
@@ -552,21 +646,33 @@ recovery_target_time = '2026-11-15 14:59:00'
 			kind: 'Tree diagram',
 			steps: [
 				{
+					title: 'Start at the root',
 					say: 'Find 40. With no index, the database would have to read every row.',
+					detail:
+						'Without an index, a search for 40 is a sequential scan: every row is read and checked, so the time grows with the table. With a B-tree, the search starts at the root node and compares 40 with the keys stored there.',
 					light: ['root']
 				},
 				{
+					title: 'Pick the right branch',
 					say: 'The root says 40 sits between 30 and 60, so skip everything else.',
+					detail:
+						'Keys in each node are kept sorted, so one comparison tells the database which child to follow. 40 is at least 30 and below 60, so the middle child is the only place it can be. The other branches are never read from disk.',
 					send: [['root', 'b']],
 					light: ['b']
 				},
 				{
+					title: 'Found in two hops',
 					say: 'Found in two hops. A real tree finds one row in millions in just a few.',
+					detail:
+						'A real index page holds hundreds of keys, so the tree is very wide and shallow. Three or four levels cover millions of rows, which means a few page reads instead of reading the whole table. The leaf entry then points to the row in the table.',
 					light: ['b'],
 					set: { b: '[40]  |  50' }
 				},
 				{
+					title: 'The write cost',
 					say: 'The catch: inserting 45 means this tree must be updated too, which slows down writes.',
+					detail:
+						'Every INSERT must also place the new key in the right leaf, in sorted order. When a leaf is full it splits in two and its parent gains a key. Each extra index repeats this work on every write, so keep only the indexes your queries use.',
 					set: { b: '40 | 45 | 50' },
 					light: ['b']
 				}
@@ -635,28 +741,43 @@ SELECT * FROM orders WHERE customer_id = 42;
 			],
 			steps: [
 				{
+					title: 'The query arrives',
 					say: 'A query arrives. It says which rows it wants, not how to find them.',
+					detail:
+						'SQL is declarative, so the query names the rows it wants, here every order for customer 42. The parser checks it and hands it to the planner, which has to choose among several possible ways to fetch those rows.',
 					send: [['q', 'p']],
 					light: ['p']
 				},
 				{
+					title: 'Read the statistics',
 					say: 'The planner checks the statistics: about 12 of a million rows match.',
+					detail:
+						'ANALYZE, which autovacuum runs in the background, stores a sample of each column such as its most common values and how many distinct values it has. From these the planner estimates how many rows match. If the statistics are stale, the guess can be badly wrong, and so can the plan.',
 					send: [['st', 'p']],
 					light: ['st']
 				},
 				{
+					title: 'Cost a full scan',
 					say: 'Plan A reads every row in the table. Its estimated cost is high.',
+					detail:
+						'A sequential scan reads every page of the table in order and tests each row. Cost is in arbitrary units based on page reads and CPU work, so 18000 only means something next to other plans. For 12 rows out of a million, nearly all that work is wasted.',
 					send: [['p', 'seq']],
 					light: ['seq']
 				},
 				{
+					title: 'Cost an index scan',
 					say: 'Plan B follows the index on customer_id. Its estimated cost is tiny.',
+					detail:
+						'The index scan walks the B-tree to the entries for 42, then fetches just those rows from the table. Each fetch can be a random page read, so it is cheap for a few rows but would lose to a full scan if most rows matched. The planner picks the lower estimate.',
 					send: [['p', 'idx']],
 					light: ['idx'],
 					down: ['seq']
 				},
 				{
+					title: 'Measure the real run',
 					say: 'EXPLAIN shows the winner. EXPLAIN ANALYZE also runs it and reports the real time.',
+					detail:
+						'EXPLAIN alone shows estimates without running anything. EXPLAIN ANALYZE executes the query and prints the actual rows and time next to each estimate. A big gap between estimated and actual rows usually means the statistics need refreshing.',
 					set: { idx: 'Index Scan\n0.09 ms' },
 					light: ['idx'],
 					down: ['seq']
@@ -721,11 +842,17 @@ SELECT * FROM orders WHERE customer_id = 42;
 			],
 			steps: [
 				{
+					title: 'Keep connections open',
 					say: 'The pool holds two open connections to PostgreSQL, ready to lend.',
+					detail:
+						'Opening a connection means a TCP handshake, often TLS, authentication and, in PostgreSQL, starting a new backend process. That can take several milliseconds or more. The pool pays this cost once at start-up and then reuses the connections.',
 					light: ['pool']
 				},
 				{
+					title: 'Borrow a connection',
 					say: 'Request 1 borrows one and runs its transaction.',
+					detail:
+						'Request 1 asks the pool for a connection and gets one that is already logged in. It keeps that connection for the length of its transaction, and the pool marks it as busy. No new process is started on the database server.',
 					send: [
 						['a1', 'pool'],
 						['pool', 'db']
@@ -733,7 +860,10 @@ SELECT * FROM orders WHERE customer_id = 42;
 					set: { pool: 'Pool\n1 free' }
 				},
 				{
+					title: 'Both connections busy',
 					say: 'Request 2 borrows the other at the same time.',
+					detail:
+						'Request 2 takes the second connection, so both now run queries on the server at once. The pool has nothing left to lend. This limit is deliberate: it caps how much work reaches the database at the same time.',
 					send: [
 						['a2', 'pool'],
 						['pool', 'db']
@@ -741,13 +871,19 @@ SELECT * FROM orders WHERE customer_id = 42;
 					set: { pool: 'Pool\n0 free' }
 				},
 				{
+					title: 'Wait in the queue',
 					say: 'Request 3 waits a moment in the queue instead of opening a new connection.',
+					detail:
+						'When the pool is empty, a new request waits instead of opening a third connection. Most pools give up after a timeout and return an error; HikariCP, for example, waits 30 seconds by default. A short wait is usually faster than overloading the server.',
 					send: [['a3', 'pool']],
 					set: { pool: 'Pool\n0 free', a3: 'Request 3\nqueued' },
 					light: ['a3']
 				},
 				{
+					title: 'Hand it on',
 					say: 'Request 1 finishes, and its connection goes straight to request 3. The database still sees only two.',
+					detail:
+						'When Request 1 commits, its connection goes back to the pool and is handed straight to the next waiting request. PgBouncer in transaction mode uses the same idea to let thousands of clients share a few dozen server connections.',
 					send: [['pool', 'db']],
 					set: { pool: 'Pool\n0 free', a1: 'Request 1\ndone', a3: 'Request 3\nserved' },
 					light: ['db']
@@ -782,22 +918,44 @@ SELECT * FROM orders WHERE customer_id = 42;
 		sketch: {
 			kind: 'Deployment diagram',
 			steps: [
-				{ say: 'The app sends every write to the primary.', send: [['app', 'p']], light: ['p'] },
 				{
+					title: 'Writes go to the primary',
+					say: 'The app sends every write to the primary.',
+					detail:
+						'Only the primary accepts INSERT, UPDATE and DELETE, so one server decides the order of all changes. Each change is first recorded in its write-ahead log. That log is what gets shipped to the replicas.',
+					send: [['app', 'p']],
+					light: ['p']
+				},
+				{
+					title: 'Stream the changes',
 					say: 'The primary copies the change to each replica.',
+					detail:
+						'In PostgreSQL streaming replication, each replica keeps a connection open, receives WAL records as they are written and replays them. With asynchronous replication the primary does not wait, so a replica can lag by a fraction of a second, or much more under heavy load.',
 					send: [
 						['p', 'r1'],
 						['p', 'r2']
 					]
 				},
 				{
+					title: 'Read from a replica',
 					say: 'Reads go to a replica, which takes load off the primary.',
+					detail:
+						'Replicas run as hot standbys, so they answer SELECT queries but reject writes. Spreading reads across them frees the primary for writes. Because of lag, a user who has just saved something may not see it here yet, so send those reads to the primary.',
 					send: [['app', 'r2']],
 					light: ['r2']
 				},
-				{ say: 'The primary dies.', down: ['p'] },
 				{
+					title: 'The primary goes down',
+					say: 'The primary dies.',
+					detail:
+						'Writes now have nowhere to go, though the replicas can still serve reads. With asynchronous replication, changes the primary had committed but not yet sent are lost. Synchronous replication avoids that loss at the cost of slower commits.',
+					down: ['p']
+				},
+				{
+					title: 'Promote a replica',
 					say: 'Replica 1 is promoted and starts taking writes, so the system keeps working.',
+					detail:
+						'Promotion turns a replica into a writable primary, for example with pg_promote() in PostgreSQL. Tools such as Patroni decide when to do it and repoint the app. The old primary must be kept out, or two primaries could accept conflicting writes.',
 					down: ['p'],
 					set: { r1: 'New\nprimary' },
 					send: [['app', 'r1']],
@@ -845,25 +1003,37 @@ SELECT * FROM orders WHERE customer_id = 42;
 			kind: 'Data flow diagram',
 			steps: [
 				{
+					title: 'Alice to shard 1',
 					say: 'Alice starts with A, so the router sends her row to shard 1.',
+					detail:
+						'The router reads the shard key, here the first letter of the name, and checks which range it falls in. A to H belongs to shard 1, so the write goes only there. The other shards never see this row.',
 					set: { r: 'Router\n"Alice"' },
 					send: [['r', 'a']],
 					light: ['a']
 				},
 				{
+					title: 'Maya to shard 2',
 					say: 'Maya goes to shard 2.',
+					detail:
+						'M sits in the I to P range, so this row lands on shard 2. Range sharding keeps neighbouring keys together, so a query for names from M to N touches one shard. The risk is a hot spot when many keys fall in one range.',
 					set: { r: 'Router\n"Maya"' },
 					send: [['r', 'b']],
 					light: ['b']
 				},
 				{
+					title: 'Zoe to shard 3',
 					say: 'Zoe goes to shard 3.',
+					detail:
+						'Z falls in Q to Z, so shard 3 stores it. Names do not start with each letter equally often, so a plain alphabet split can leave one shard much fuller than the others. Hashing the key spreads rows more evenly but scatters range queries across every shard.',
 					set: { r: 'Router\n"Zoe"' },
 					send: [['r', 'c']],
 					light: ['c']
 				},
 				{
-					say: 'Each server now holds a third of the data and a third of the load.',
+					title: 'Spread the load',
+					say: 'Each server now holds roughly a third of the data and a third of the load.',
+					detail:
+						'Each shard stores and serves only its own rows, so adding servers adds room for both data and writes. The price shows up in work that spans shards: a join or transaction across two of them needs extra round trips and coordination such as two-phase commit.',
 					send: [
 						['r', 'a'],
 						['r', 'b'],
@@ -949,25 +1119,44 @@ SELECT * FROM orders WHERE customer_id = 42;
 				{ from: 'c2', to: 'n2' }
 			],
 			steps: [
-				{ say: 'A write reaches node A.', send: [['c1', 'n1']], set: { n1: 'Node A\nx = 2' } },
 				{
+					title: 'Write to node A',
+					say: 'A write reaches node A.',
+					detail:
+						'The writer sends x = 2 to node A, which stores it. Node A could confirm straight away, or wait until node B has a copy too. That choice already trades latency against consistency, which is what PACELC describes.',
+					send: [['c1', 'n1']],
+					set: { n1: 'Node A\nx = 2' }
+				},
+				{
+					title: 'Replicate to node B',
 					say: 'Normally it is copied across, so both nodes agree.',
+					detail:
+						'Node A sends the change over the network to node B, which applies it. After that, a read from either node returns 2. On a healthy network this copying usually takes milliseconds, so the window where they disagree is short.',
 					send: [['n1', 'n2']],
 					set: { n1: 'Node A\nx = 2', n2: 'Node B\nx = 2' }
 				},
 				{
+					title: 'The network splits',
 					say: 'The network between them breaks, and another write lands on A only.',
+					detail:
+						'A partition means both nodes are running but cannot reach each other, perhaps after a failed switch or a bad firewall rule. Node A accepts x = 3, and node B has no way to learn about it. Neither node can tell whether the other is down or just unreachable.',
 					send: [['c1', 'n1']],
 					set: { n1: 'Node A\nx = 3', n2: 'Node B\nx = 2\ncut off' }
 				},
 				{
+					title: 'Choose consistency',
 					say: 'CP choice: B refuses to answer rather than risk being wrong.',
+					detail:
+						'Node B knows it may be behind, so it returns an error or times out instead of guessing. Systems built on a majority vote, such as etcd with the Raft protocol, work this way: the side without a majority stops serving. Answers stay correct, but some clients get none.',
 					send: [['c2', 'n2']],
 					set: { n1: 'Node A\nx = 3', n2: 'Node B\nrefused' },
 					down: ['n2']
 				},
 				{
+					title: 'Choose availability',
 					say: 'AP choice: B answers with old data, and catches up after the network heals.',
+					detail:
+						'Node B answers with x = 2, which was correct before the break but is stale now. When the network heals, the nodes swap the writes they missed and converge, using a rule such as last write wins for conflicts. Fine for a like counter, risky for a balance.',
 					send: [['c2', 'n2']],
 					set: { n1: 'Node A\nx = 3', n2: 'Node B\nx = 2 (old)' },
 					light: ['n2']
@@ -1010,22 +1199,34 @@ SELECT * FROM orders WHERE customer_id = 42;
 			],
 			steps: [
 				{
+					title: 'Key-value lookup',
 					say: 'Need one thing by key, very fast? Use key-value, such as a login session in Redis.',
+					detail:
+						'A key-value store finds data by its exact key, such as session:42, and nothing else. Redis keeps the data in memory, so a lookup usually takes well under a millisecond. Asking for every session from one country is slow unless you maintain your own index.',
 					send: [['app', 'kv']],
 					light: ['kv']
 				},
 				{
+					title: 'Document store',
 					say: 'Records of varying shape? Use a document store, such as product pages in MongoDB.',
+					detail:
+						'Each document is a JSON-like record, stored by MongoDB as BSON, and two products can have different fields with no schema change. A whole product page comes back in one read, with no joins. The trade-off is that shared data may be copied, and your code must keep the copies in sync.',
 					send: [['app', 'doc']],
 					light: ['doc']
 				},
 				{
+					title: 'Wide-column writes',
 					say: 'Enormous write volumes? Use wide-column, such as sensor data in Cassandra.',
+					detail:
+						'Cassandra appends each write to a commit log and an in-memory table, later flushed to disk as sorted files, so writes are very cheap. Rows are grouped by a partition key, such as sensor id plus day. Queries must name that key, and filtering on other columns is poorly supported.',
 					send: [['app', 'wide']],
 					light: ['wide']
 				},
 				{
+					title: 'Graph traversal',
 					say: 'Is the data all about connections? Use a graph, such as friends of friends in Neo4j.',
+					detail:
+						'A graph database stores people as nodes and friendships as edges that point straight at each other. Following an edge is cheap, so friends of friends is a short walk rather than repeated self-joins on a large table. In Neo4j you write it in Cypher, as MATCH (a)-[:FRIEND]->()-[:FRIEND]->(c).',
 					send: [['app', 'graph']],
 					light: ['graph']
 				}

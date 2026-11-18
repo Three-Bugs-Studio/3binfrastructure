@@ -51,22 +51,34 @@ export const devops: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Plan the work',
 					say: 'An idea becomes a small, clear piece of work.',
+					detail:
+						'Planning breaks a big idea into slices that can each ship on their own, often as a ticket with clear acceptance criteria. A slice that takes a day or two is easy to review and test, while a month-long chunk hides its problems until the end.',
 					send: [['plan', 'code']],
 					light: ['code']
 				},
 				{
+					title: 'Merge and build',
 					say: 'Code is merged, and a machine builds it.',
+					detail:
+						"A build server, such as GitHub Actions or Jenkins, fetches the merged commit onto a clean machine and turns it into something runnable, like a container image. Because a machine does it the same way every time, nobody's laptop settings can sneak into the result.",
 					send: [['code', 'build']],
 					light: ['build']
 				},
 				{
+					title: 'Automated tests',
 					say: 'Automated tests give an answer within minutes.',
+					detail:
+						'Unit tests check small pieces of code in milliseconds, and integration tests check that the pieces work together. If anything fails, the build stops here, so a broken change never travels further round the loop. Keeping this under about ten minutes means people wait for the result.',
 					send: [['build', 'test']],
 					light: ['test']
 				},
 				{
+					title: 'Release and deploy',
 					say: 'The tested build is released and deployed, usually without anyone clicking anything.',
+					detail:
+						'Release means marking a tested build as ready to go, and deploy means installing it on the servers. A pipeline script does both, so every release follows exactly the same steps. Manual deploys tend to skip a step at the worst moment, often late at night.',
 					send: [
 						['test', 'rel'],
 						['rel', 'dep']
@@ -74,7 +86,10 @@ export const devops: Topic[] = [
 					light: ['dep']
 				},
 				{
+					title: 'Operate and watch',
 					say: 'It runs for real users, and the team watches how it behaves.',
+					detail:
+						'Once live, the team watches error rates, response times and usage on dashboards, with alerts for anything unusual. Because the people who wrote the code also run it, they feel its problems first and have every reason to make it easy to operate.',
 					send: [
 						['dep', 'run'],
 						['run', 'mon']
@@ -82,7 +97,10 @@ export const devops: Topic[] = [
 					light: ['mon']
 				},
 				{
+					title: 'Back to planning',
 					say: 'What they learn feeds the next plan. The loop never stops.',
+					detail:
+						'Monitoring data and user feedback show which features get used and where things break, and that evidence shapes the next slice of work. A team that ships daily goes round this loop hundreds of times a year, so it learns far faster than one that ships twice.',
 					send: [['mon', 'plan']],
 					light: ['plan']
 				}
@@ -117,16 +135,25 @@ export const devops: Topic[] = [
 			edges: [],
 			steps: [
 				{
+					title: 'Big monthly releases',
 					say: 'A team ships big monthly releases. They feel careful, but they are slow and fail often.',
+					detail:
+						'Bundling a month of work into one release means hundreds of changes go live together. When something breaks, nobody can tell which change caused it, so failures are common and slow to untangle. A finished feature also sits unused for weeks waiting for the next release.',
 					light: ['freq', 'fail']
 				},
 				{
+					title: 'Smaller changes',
 					say: 'They add automated tests and a pipeline, so changes get smaller.',
+					detail:
+						'A pipeline removes the manual work that made each release expensive, so shipping daily costs about the same effort as shipping monthly. Lead time, the clock from commit to production, falls from weeks to days because work no longer waits for a release date.',
 					set: { freq: 'Deploys\nevery day', lead: 'Lead time\n2 days' },
 					light: ['freq', 'lead']
 				},
 				{
+					title: 'Fewer failures',
 					say: 'Small changes are easier to check, so fewer of them break.',
+					detail:
+						'A fifty-line change can be reviewed properly and tested fully, while a five-thousand-line release cannot. The change failure rate is the share of deployments that need a hotfix or rollback, and here it drops from 30% to 8%.',
 					set: {
 						freq: 'Deploys\nevery day',
 						lead: 'Lead time\n2 days',
@@ -135,7 +162,10 @@ export const devops: Topic[] = [
 					light: ['fail']
 				},
 				{
+					title: 'Restore in minutes',
 					say: 'When one does break, the cause is obvious and rollback is one click. Faster became safer.',
+					detail:
+						'Time to restore measures how long users suffer before service is back. With one small change per deploy, the suspect is clear, and redeploying the previous build is a routine pipeline run. This is the key DORA finding: speed and stability improve together.',
 					set: {
 						freq: 'Deploys\nevery day',
 						lead: 'Lead time\n2 days',
@@ -187,27 +217,42 @@ export const devops: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Branch off main',
 					say: 'Create a short branch from main for one small change.',
+					detail:
+						'A branch in Git is just a cheap pointer to a commit, made with a command like git switch -c fix-login. Keeping it to one small change means it can merge within a day, before main moves far ahead and conflicts pile up.',
 					send: [['m1', 'b']],
 					light: ['b']
 				},
 				{
+					title: 'Open a pull request',
 					say: 'Open a pull request. CI starts testing it straight away.',
+					detail:
+						'The pull request shows the diff to reviewers and starts the CI workflow on every push to the branch. On GitHub, CI usually tests a trial merge of the branch into the latest main, so it checks what main would actually become.',
 					send: [['b', 'pr']],
 					light: ['pr']
 				},
 				{
+					title: 'Merge blocked',
 					say: 'CI finds a failing test, so main stays protected.',
+					detail:
+						'Branch protection rules make passing checks a requirement, so the merge button stays disabled while any required check is red. The broken change lives only on its branch, and everyone else keeps working from a healthy main.',
 					set: { pr: 'Tests failed\nmerge blocked' },
 					down: ['pr']
 				},
 				{
+					title: 'Fix and approve',
 					say: 'Push a fix. The checks pass and a teammate approves.',
+					detail:
+						'Each new push to the branch reruns every check from scratch, so the fix is tested too. A reviewer reads the diff, asks questions and approves it. Many teams require at least one approval from someone other than the author.',
 					set: { pr: 'CI passed\nApproved' },
 					light: ['pr']
 				},
 				{
+					title: 'Merge the same day',
 					say: 'It merges into main the same day, before it can drift.',
+					detail:
+						'Merging quickly keeps the gap between the branch and main small, so conflicts stay tiny. Teams often squash the branch into one commit, giving a clean history where each commit on main is one reviewed change. The branch is then deleted.',
 					send: [['pr', 'm2']],
 					set: { pr: 'CI passed\nApproved' },
 					light: ['m2']
@@ -264,30 +309,45 @@ jobs:
 			],
 			steps: [
 				{
+					title: 'Push starts a run',
 					say: 'A developer pushes a commit, and a clean machine starts up.',
+					detail:
+						'The push triggers the workflow, and the CI service starts a fresh virtual machine, such as an ubuntu-latest runner on GitHub Actions. It checks out the code and runs npm ci, which installs exactly the versions in the lockfile.',
 					hide: ['dev'],
 					send: [['push', 'lint']],
 					light: ['lint']
 				},
 				{
+					title: 'Quick checks first',
 					say: 'Style and lint checks pass in seconds.',
+					detail:
+						'Linting reads the code without running it, catching mistakes like unused variables or inconsistent formatting. These checks are cheap, so they run first: if one fails, nobody waits minutes for the slower test suite to point out a typo.',
 					hide: ['dev'],
 					send: [['lint', 'test']],
 					light: ['test']
 				},
 				{
+					title: 'A test fails',
 					say: 'A test fails. The pipeline stops here, so the bad build goes no further.',
+					detail:
+						'Each step must exit with code 0 for the job to carry on. A failing test returns a non-zero code, so the runner marks the job red and skips the remaining steps, and no build is made. The commit shows as failed on its pull request.',
 					down: ['test'],
 					hide: ['dev']
 				},
 				{
+					title: 'Fast feedback',
 					say: 'The developer hears about it while the change is still fresh in their mind.',
+					detail:
+						'CI reports the result on the pull request and usually sends a notification by email or chat. Hearing within ten minutes means the developer still remembers the change, so the fix often takes moments. A failure found a week later can take hours to understand.',
 					down: ['test'],
 					send: [['test', 'dev']],
 					light: ['dev']
 				},
 				{
+					title: 'All checks green',
 					say: 'After the fix, everything passes and the build is ready to ship.',
+					detail:
+						'Once every step passes, the build step produces the output that later stages will deploy. Many pipelines save it as an artifact, a stored copy of the build, so later stages reuse this exact output instead of building it again.',
 					hide: ['dev'],
 					send: [['test', 'build']],
 					light: ['build']
@@ -330,30 +390,45 @@ jobs:
 			],
 			steps: [
 				{
+					title: 'Build once',
 					say: 'CI produces one build. This same build moves through every environment.',
+					detail:
+						'The build gets a fixed version, here v2.4, and is stored unchanged, often as a container image tagged with that version. Rebuilding for each environment could pull in a different dependency or setting, so you would ship something you never tested.',
 					light: ['art'],
 					hide: ['old']
 				},
 				{
+					title: 'Check in staging',
 					say: 'It goes to staging first, and automated checks run against it.',
+					detail:
+						'Staging is set up to match production as closely as possible: same infrastructure, same kind of config, realistic data. Automated end-to-end tests drive the app the way a user would, catching problems that only show when all the parts run together.',
 					send: [['art', 'stg']],
 					light: ['stg'],
 					hide: ['old']
 				},
 				{
+					title: 'The approval gate',
 					say: 'In Continuous Delivery a human approves here. In Continuous Deployment this gate is automatic.',
+					detail:
+						'In Continuous Delivery the pipeline pauses until someone clicks approve, often a product owner choosing a good moment. In Continuous Deployment, passing tests are the approval. Both need the same strong automated tests to be safe.',
 					send: [['stg', 'gate']],
 					light: ['gate'],
 					hide: ['old']
 				},
 				{
+					title: 'Smoke test in production',
 					say: 'It reaches production, and a smoke test runs straight away.',
+					detail:
+						'A smoke test is a short script that checks the vital paths: the home page loads, users can log in, a payment can start. It takes seconds and runs against the real system, catching problems such as a missing production setting that staging could not reveal.',
 					send: [['gate', 'prod']],
 					light: ['prod'],
 					hide: ['old']
 				},
 				{
+					title: 'Automatic rollback',
 					say: 'If the smoke test fails, the pipeline restores the last good version.',
+					detail:
+						'Because v2.3 is still stored as an artifact, rolling back means redeploying it, not rebuilding anything, so recovery takes minutes. It only stays safe if database changes in v2.4 are backwards compatible with the older code.',
 					down: ['prod'],
 					send: [['prod', 'old']],
 					light: ['old']
@@ -401,24 +476,36 @@ CMD ["node", "server.js"]`,
 			],
 			steps: [
 				{
+					title: 'Write the Dockerfile',
 					say: 'The Dockerfile describes exactly how to build your app.',
+					detail:
+						'Each line is an instruction: FROM picks a base image, COPY adds files, RUN executes a command at build time, and CMD sets what starts when the container runs. Because the recipe lives in Git, anyone can rebuild the same environment and review changes to it.',
 					light: ['df'],
 					hide: ['a', 'b']
 				},
 				{
+					title: 'Build the image',
 					say: 'Building it produces an image: your app plus everything it needs.',
+					detail:
+						'docker build runs each instruction and saves the result as a read-only layer. Layers are cached, so copying package.json before the rest of the code means dependencies are reinstalled only when they change. That can cut a rebuild from minutes to seconds.',
 					send: [['df', 'img']],
 					light: ['img'],
 					hide: ['a', 'b']
 				},
 				{
+					title: 'Push to a registry',
 					say: 'The image is pushed to a registry with a version tag.',
+					detail:
+						'docker push uploads the layers to a registry such as Docker Hub or Amazon ECR, under a name and tag like shop:v1.2. Layers the registry already holds are skipped. Avoid the latest tag in production, because it can point to a different image tomorrow.',
 					send: [['img', 'reg']],
 					light: ['reg'],
 					hide: ['a', 'b']
 				},
 				{
+					title: 'Pull and run anywhere',
 					say: 'Any machine can pull it and run it. Both copies are identical, byte for byte.',
+					detail:
+						'docker run fetches the image if needed and starts it as an isolated process that shares the host kernel, so it starts in moments. Pulling by digest, a sha256 fingerprint of the image, guarantees both machines get exactly the same bytes. Anything written inside the container is lost when it is removed.',
 					send: [
 						['reg', 'a'],
 						['reg', 'b']
@@ -462,7 +549,10 @@ CMD ["node", "server.js"]`,
 			],
 			steps: [
 				{
+					title: 'Desired state',
 					say: 'You declared "I want 3 Pods". The Service shares traffic across them.',
+					detail:
+						'You write the wish in a Deployment with replicas: 3 and apply it. Pods come and go and their addresses change, so the Service gives them one stable name and address and spreads requests across whichever Pods are behind it.',
 					hide: ['d'],
 					send: [
 						['svc', 'a'],
@@ -470,21 +560,37 @@ CMD ["node", "server.js"]`,
 						['svc', 'c']
 					]
 				},
-				{ say: 'Node 1 dies, taking two Pods with it.', hide: ['d'], down: ['a', 'b'] },
 				{
+					title: 'A node fails',
+					say: 'Node 1 dies, taking two Pods with it.',
+					detail:
+						'A node can go down from a hardware fault, a crash or a lost network link. The kubelet, the agent on each node, stops sending heartbeats, and after a short grace period the control plane marks the node NotReady. Its Pods can no longer serve requests.',
+					hide: ['d'],
+					down: ['a', 'b']
+				},
+				{
+					title: 'Spot the difference',
 					say: 'The control plane sees 1 Pod running but 3 wanted.',
+					detail:
+						'Controllers in the control plane run a loop: compare the desired state with the actual state, then act on any difference. By default, Pods on an unreachable node are evicted after about five minutes, and from then on they no longer count towards the 3.',
 					hide: ['d'],
 					down: ['a', 'b'],
 					light: ['cp']
 				},
 				{
+					title: 'Reschedule the Pods',
 					say: 'It starts replacements on the healthy node, without anyone being paged.',
+					detail:
+						'The ReplicaSet controller creates new Pod objects, and the scheduler picks a node with enough free CPU and memory, here Node 2. The kubelet there pulls the image and starts the containers. This only works if the healthy nodes have spare capacity.',
 					down: ['a', 'b'],
 					send: [['cp', 'd']],
 					light: ['d']
 				},
 				{
+					title: 'Route to ready Pods',
 					say: 'The Service only sends traffic to Pods that are ready.',
+					detail:
+						'Each Pod can declare a readiness probe, such as an HTTP check on /healthz. Until it passes, the Pod is left out of the Service endpoints, so a container that is still starting never gets traffic. A Pod that fails the probe later is taken out too.',
 					hide: ['a', 'b'],
 					send: [
 						['svc', 'c'],
@@ -514,7 +620,7 @@ CMD ["node", "server.js"]`,
 		links: [['Terraform', 'https://developer.hashicorp.com/terraform/intro']],
 		sketch: {
 			kind: 'Process diagram',
-			alt: 'Code in Git goes through plan and review, then apply, which creates the real cloud resources. A manual change causes drift, and the next plan finds it.',
+			alt: 'Code in Git goes through plan and review, then apply, which creates the real cloud resources. A server deleted by hand causes drift, and the next plan finds it.',
 			h: 175,
 			nodes: [
 				{ id: 'code', label: 'Code\nin Git', x: 50, y: 95, w: 84, h: 66, fill: 'sky' },
@@ -529,18 +635,27 @@ CMD ["node", "server.js"]`,
 			],
 			steps: [
 				{
+					title: 'Edit the code',
 					say: 'You change "2 servers" to "4 servers" in code and open a pull request.',
+					detail:
+						'In Terraform this is often a single number, like count = 4 on the server resource. Making the change in a pull request gives it the same review, history and CI checks as application code, so anyone can see who changed what and when.',
 					light: ['code'],
 					set: { code: 'Code\n4 servers' }
 				},
 				{
+					title: 'Plan and review',
 					say: 'Plan shows exactly what will change: add 2. A teammate reviews it.',
+					detail:
+						'terraform plan reads the state file, checks the real resources, and lists every create, change or destroy it would make. The reviewer reads that output, not just the code, because a small edit can sometimes replace a resource instead of updating it in place.',
 					send: [['code', 'plan']],
 					set: { code: 'Code\n4 servers', plan: 'Plan:\nadd 2' },
 					light: ['plan']
 				},
 				{
+					title: 'Apply the change',
 					say: 'Apply makes it real.',
+					detail:
+						'terraform apply calls the cloud provider API to create the two new servers, then records them in the state file. Keeping state remotely with locking turned on stops two people applying at the same time and corrupting that record.',
 					send: [
 						['plan', 'apply'],
 						['apply', 'cloud']
@@ -548,14 +663,20 @@ CMD ["node", "server.js"]`,
 					set: { code: 'Code\n4 servers', cloud: 'Cloud\n4 servers' }
 				},
 				{
-					say: 'Someone adds a server by hand in the console. Reality no longer matches the code.',
-					set: { code: 'Code\n4 servers', cloud: 'Cloud\n5 servers' },
+					title: 'Manual drift',
+					say: 'Someone deletes a server by hand in the console. Reality no longer matches the code.',
+					detail:
+						'Console changes skip review and leave no record in Git, so the code stops describing reality. Nobody can see who removed the server or why, and the team now runs on less capacity than the code promises.',
+					set: { code: 'Code\n4 servers', cloud: 'Cloud\n3 servers' },
 					light: ['cloud']
 				},
 				{
-					say: 'The next plan spots the drift and offers to remove it.',
+					title: 'Plan finds the drift',
+					say: 'The next plan spots the drift and offers to put the server back.',
+					detail:
+						'Each plan refreshes its view of the real resources and compares them with the code, so the missing server shows up as one to create. One catch: Terraform only tracks resources in its state, so a server made entirely by hand stays invisible until you import it.',
 					send: [['code', 'plan']],
-					set: { code: 'Code\n4 servers', plan: 'Plan:\nremove 1', cloud: 'Cloud\n5 servers' },
+					set: { code: 'Code\n4 servers', plan: 'Plan:\nadd 1', cloud: 'Cloud\n3 servers' },
 					light: ['plan']
 				}
 			]
@@ -609,35 +730,53 @@ CMD ["node", "server.js"]`,
 			],
 			steps: [
 				{
+					title: 'Land in Dev',
 					say: 'A developer merges a new checkout feature, and it lands in Dev.',
+					detail:
+						"Merging to main triggers an automatic deploy to Dev, a shared environment where everyone's merged work runs together for the first time. It uses fake seed data, so breaking it costs a little time and nothing else.",
 					hide: ['bug'],
 					light: ['dev']
 				},
 				{
+					title: 'Try to break it',
 					say: 'It moves to Test, where QA and automated suites try to break it.',
+					detail:
+						'Test runs a stable build long enough for testers to work through it, alongside automated end-to-end and regression suites. Its data is fake but chosen to cover awkward cases, like expired cards, empty baskets and very long names.',
 					hide: ['bug'],
 					send: [['dev', 'test']],
 					light: ['test']
 				},
 				{
+					title: 'Catch the bug early',
 					say: 'They find a bug with discount codes. No customer ever saw it.',
+					detail:
+						'Testers try unusual combinations a developer did not think of, such as two discount codes on one order. The bug is logged in a ticket with the steps to reproduce it, and the build is held back from Staging.',
 					send: [['test', 'bug']],
 					light: ['bug'],
 					down: ['test']
 				},
 				{
+					title: 'Fix it in Dev',
 					say: 'It goes back to Dev for a fix, which costs an hour instead of an outage.',
+					detail:
+						'The developer writes a test that reproduces the bug, fixes the code and merges again, so the pipeline makes a new build. That test stays in the suite, so this bug cannot quietly return later.',
 					send: [['bug', 'dev']],
 					light: ['dev']
 				},
 				{
+					title: 'Staging sign-off',
 					say: 'The fixed version passes Test and reaches Staging for a final sign-off.',
+					detail:
+						'Staging mirrors production in setup and size, often with masked copies of real data. The product owner checks the feature does what the business asked for, which is user acceptance testing. It is also the last place to rehearse the deploy itself.',
 					hide: ['bug'],
 					send: [['test', 'stg']],
 					light: ['stg']
 				},
 				{
+					title: 'Reach production',
 					say: 'Only now does it reach Production and real customers.',
+					detail:
+						'The exact build that passed every earlier stage is deployed, with only its config changed. Many teams release it to a small share of users first and watch the dashboards, because some problems only appear with real traffic and real data.',
 					hide: ['bug'],
 					send: [['stg', 'prod']],
 					light: ['prod']
@@ -680,29 +819,50 @@ CMD ["node", "server.js"]`,
 				{ from: 'rel', to: 'obs' }
 			],
 			steps: [
-				{ say: "A pull request passes CI and gets a teammate's approval.", light: ['pr'] },
 				{
+					title: 'Review and CI',
+					say: "A pull request passes CI and gets a teammate's approval.",
+					detail:
+						'Branch protection keeps the merge button locked until the checks pass and a reviewer approves. The reviewer looks for bugs, unclear code and missing tests, which catches problems no automated check would find.',
+					light: ['pr']
+				},
+				{
+					title: 'Auto-deploy to Dev',
 					say: 'Merging deploys it to Dev straight away, with no manual step.',
+					detail:
+						'A merge to main triggers the pipeline, which builds the image once, tags it with the commit hash and deploys it to Dev. Tagging with the commit means anyone can trace exactly which code is running in each environment.',
 					send: [['pr', 'dev']],
 					light: ['dev']
 				},
 				{
+					title: 'QA checks the ticket',
 					say: 'QA moves the ticket to Test and checks every acceptance criterion.',
+					detail:
+						'Acceptance criteria are the conditions written on the ticket, such as a 10% discount code lowering the total by exactly 10%. QA tests each one by hand or with automated suites, and tries edge cases too. If any fail, the ticket goes back to the developer.',
 					send: [['dev', 'qa']],
 					light: ['qa']
 				},
 				{
+					title: 'Business sign-off',
 					say: 'The product owner tries it in Staging and approves it.',
+					detail:
+						'User acceptance testing checks that the feature solves the real business need, not just that it works. Staging is close to production, so the product owner sees it as customers will. In regulated companies this approval is often recorded for audits.',
 					send: [['qa', 'uat']],
 					light: ['uat']
 				},
 				{
+					title: 'Promote the same build',
 					say: 'That same build goes to Production, with no rebuilding.',
+					detail:
+						'The pipeline deploys the exact image tag or digest that passed Dev, Test and Staging. Rebuilding could pull in a newer dependency version, so what goes live might differ from what everyone tested.',
 					send: [['uat', 'rel']],
 					light: ['rel']
 				},
 				{
+					title: 'Watch it live',
 					say: 'The team watches errors and latency. The change is not done until it is healthy in Production.',
+					detail:
+						'For the first hours, the team watches error rate, latency and business numbers like completed orders, often compared with the same time yesterday. If anything drifts the wrong way, they roll back first and investigate after.',
 					send: [['rel', 'obs']],
 					light: ['obs']
 				}
@@ -754,7 +914,10 @@ LOG_LEVEL=info`,
 			],
 			steps: [
 				{
+					title: 'One image, many configs',
 					say: 'SET UP: the same image starts everywhere, and only its config changes.',
+					detail:
+						'The app reads settings like DATABASE_URL from environment variables when it starts, so nothing environment-specific is baked into the image. This matters because the build that passed Test is then the exact build that runs in Production.',
 					send: [
 						['img', 'ct'],
 						['img', 'cp']
@@ -762,25 +925,37 @@ LOG_LEVEL=info`,
 					light: ['img']
 				},
 				{
+					title: 'Isolated databases',
 					say: 'SET UP: each environment reaches only its own database.',
+					detail:
+						'Test config points at the test database and Production config at the production one, each with its own credentials. Ideally they also sit in separate networks or cloud accounts, so a mistake in one environment has no route into the other.',
 					send: [
 						['ct', 'dt'],
 						['cp', 'dp']
 					]
 				},
 				{
+					title: 'Copied config',
 					say: 'SKIPPED: someone copies a config file, and Test now holds the Production address.',
+					detail:
+						'Config files often get copied between environments to save time, and one forgotten value comes along. Nothing looks wrong, because the app starts happily with any valid address. Without separate credentials, the only protection left is people being careful.',
 					set: { ct: 'Test config\nPROD address!' },
 					light: ['ct']
 				},
 				{
+					title: 'Script hits production',
 					say: 'SKIPPED: a cleanup script for test data runs against real customers.',
+					detail:
+						'The script was written to wipe test orders, and it does exactly that, but to real customer records. Getting them back means restoring a backup, which can take hours and lose recent changes. Separate credentials for each environment prevent this.',
 					send: [['ct', 'dp']],
 					set: { ct: 'Test config\nPROD address!' },
 					down: ['dp']
 				},
 				{
+					title: 'Refused by design',
 					say: 'SET UP: with separate credentials, that connection is simply refused.',
+					detail:
+						'The production database only accepts credentials that live in the production secrets manager, and Test never has them. Even with the wrong address the login fails, and network rules can block the connection before it gets that far. Safety comes from the setup, not from memory.',
 					send: [['ct', 'dp']],
 					set: { ct: 'Test config\nrefused' },
 					light: ['dp']
@@ -827,32 +1002,47 @@ LOG_LEVEL=info`,
 			],
 			steps: [
 				{
+					title: 'Copy prod into Test',
 					say: 'SKIPPED: someone copies the production database into Test to reproduce a bug.',
+					detail:
+						'A bug that only happens with real data tempts people to dump the whole database and restore it into Test. Within an hour, names, emails, addresses and order history sit in a system never meant to hold them. Privacy laws such as GDPR expect that data to be protected wherever it is copied.',
 					hide: ['mask', 'leak'],
 					send: [['prod', 'test']],
 					set: { test: 'Real names' }
 				},
 				{
+					title: 'Weaker protection',
 					say: 'SKIPPED: Test has weaker security, and more people can reach it.',
+					detail:
+						'Test environments usually have more users, shared logins, looser network rules and less monitoring, because they are meant to be safe to break. Data that would be encrypted and audited in production sits there with far fewer guards.',
 					hide: ['mask', 'leak'],
 					set: { test: 'Real names' },
 					light: ['test']
 				},
 				{
+					title: 'Data leaks',
 					say: 'SKIPPED: a laptop is lost, and real customer details go with it.',
+					detail:
+						'Developers often pull Test data onto laptops for debugging, and a laptop can be stolen or a test bucket left public. Because the data is real, the company may have to tell regulators and customers. Under GDPR, a reportable breach must usually be reported within 72 hours.',
 					hide: ['mask'],
 					send: [['test', 'leak']],
 					set: { test: 'Real names' },
 					light: ['leak']
 				},
 				{
+					title: 'Mask on the way',
 					say: 'SET UP: the copy passes through masking first.',
+					detail:
+						'Masking is a step in the copy job that rewrites sensitive fields before the data leaves production. It runs automatically on every refresh, so nobody can forget it, and only the masked result is allowed into Test.',
 					hide: ['leak'],
 					send: [['prod', 'mask']],
 					light: ['mask']
 				},
 				{
+					title: 'Fake but realistic',
 					say: 'SET UP: names become fake while the shape of the data stays realistic.',
+					detail:
+						'Masking swaps names, emails and card numbers for fake ones but keeps their formats, lengths and the links between tables. The same customer gets the same fake name everywhere, so joins still work and bugs still reproduce, while real people stay private.',
 					hide: ['leak'],
 					send: [['mask', 'test']],
 					set: { test: 'Fake names' }
@@ -897,36 +1087,54 @@ LOG_LEVEL=info`,
 			],
 			steps: [
 				{
+					title: 'Production breaks',
 					say: 'Version 2.4 is live, and checkout starts failing.',
+					detail:
+						'Alerts fire as checkout errors jump after the deploy, and every minute costs orders. The pull to try a quick fix on the server is strongest now, which is exactly when an untested change is most likely to make things worse.',
 					down: ['prod'],
 					hide: ['hot', 'test']
 				},
 				{
+					title: 'Roll back first',
 					say: 'Roll back first. Customers are safe again within minutes.',
+					detail:
+						'Redeploying v2.3, the last good build, takes the bug out of production before anyone needs to understand it. It works because the old artifact is still stored, and it is only safe if v2.4 made no database changes that v2.3 cannot handle.',
 					set: { prod: 'Production\nv2.3' },
 					hide: ['hot', 'test'],
 					light: ['prod']
 				},
 				{
+					title: 'Hotfix branch',
 					say: 'Create a small hotfix branch with only the fix in it.',
+					detail:
+						'The branch starts from the code that was released, often the v2.4 tag, not from main, which may already hold unfinished work. Keeping it to only the fix makes it quick to review and limits what else could go wrong.',
 					set: { prod: 'Production\nv2.3' },
 					hide: ['test'],
 					light: ['hot']
 				},
 				{
+					title: 'Fast pipeline',
 					say: 'It runs through a fast version of the pipeline. Nobody edits the server by hand.',
+					detail:
+						'A hotfix pipeline still runs the essential tests but may skip slow stages like a full regression suite. Editing files on a server leaves no record, is wiped out by the next deploy, and makes things worse when nobody can say what changed.',
 					set: { prod: 'Production\nv2.3' },
 					send: [['hot', 'test']],
 					light: ['test']
 				},
 				{
+					title: 'Ship the fix',
 					say: 'The fix goes live.',
+					detail:
+						'The fixed build becomes v2.5 and goes out through the normal deploy steps, with a smoke test and the team watching dashboards. Using a new version number rather than reusing v2.4 keeps it clear which code is running.',
 					set: { prod: 'Production\nv2.5' },
 					send: [['test', 'prod']],
 					light: ['prod']
 				},
 				{
+					title: 'Merge back to main',
 					say: 'The fix is merged back to main, so the next release does not bring the bug back.',
+					detail:
+						'The next regular release is built from main, so a fix that lives only on the hotfix branch would be lost and the bug would return. Merging back, ideally with a test for the bug, closes that gap. Some teams fix main first and cherry-pick the fix onto the release instead.',
 					set: { prod: 'Production\nv2.5' },
 					send: [['hot', 'main']],
 					light: ['main']
@@ -971,14 +1179,20 @@ LOG_LEVEL=info`,
 			],
 			steps: [
 				{
+					title: 'Deploy without traffic',
 					say: 'All traffic is on version 1. Version 2 is deployed but receives nothing.',
+					detail:
+						'Version 2 is running and passing its health checks, but the router sends it nothing. Separating deploy from release like this means a broken install never touches a single user.',
 					send: [
 						['user', 'r'],
 						['r', 'v1']
 					]
 				},
 				{
+					title: 'Send a canary',
 					say: 'Send 5% of users to version 2: the canary.',
+					detail:
+						'The router, often a load balancer or service mesh, uses weights to send 5 in every 100 requests to version 2. Many setups pin each user to one version with a cookie, so nobody flips between old and new pages mid-visit.',
 					set: { r: 'Router\n95 / 5' },
 					send: [
 						['r', 'v1'],
@@ -987,7 +1201,10 @@ LOG_LEVEL=info`,
 					light: ['v2']
 				},
 				{
+					title: 'Raise the share',
 					say: 'Errors and latency look healthy, so raise it to 50%.',
+					detail:
+						'The team, or a tool like Argo Rollouts or Flagger, compares version 2 with version 1 on error rate and latency. Each step usually waits several minutes, so there are enough requests for the numbers to be trusted before moving on.',
 					set: { r: 'Router\n50 / 50' },
 					send: [
 						['r', 'v1'],
@@ -995,13 +1212,19 @@ LOG_LEVEL=info`,
 					]
 				},
 				{
+					title: 'Full rollout',
 					say: 'Still healthy. Move everyone over.',
+					detail:
+						'Version 1 is often kept around for a while in case a late problem appears, then removed. Throughout the rollout both versions ran side by side, which is why database changes must work with both old and new code.',
 					set: { r: 'Router\n0 / 100' },
 					send: [['r', 'v2']],
 					light: ['v2']
 				},
 				{
+					title: 'Canary rollback',
 					say: 'Had the canary failed, only 5% of users would have noticed, and rollback is one change.',
+					detail:
+						'Setting the router back to 100/0 takes effect in seconds, because version 1 never stopped running. The damage is limited to a few minutes for a small group, compared with everyone when a release goes out all at once.',
 					set: { r: 'Router\n100 / 0' },
 					down: ['v2'],
 					send: [['r', 'v1']]
@@ -1037,16 +1260,25 @@ LOG_LEVEL=info`,
 			],
 			steps: [
 				{
+					title: 'In sync',
 					say: 'Git says 3 copies, the cluster runs 3. Everything matches.',
+					detail:
+						'The repository holds manifests, files that describe the desired state, such as replicas: 3 in a Deployment. The agent runs inside the cluster and reports Synced when the live objects match the files, so anyone can check what should be running by reading Git.',
 					light: ['git', 'k8s']
 				},
 				{
+					title: 'Merge to Git',
 					say: 'You merge a change to 5 copies. Nothing pushes it anywhere.',
+					detail:
+						'Changing the copy count is a normal pull request, with review and history. CI never needs credentials for the cluster, which removes one of the most valuable secrets an attacker could steal from a pipeline.',
 					set: { git: 'Git repo\nreplicas: 5' },
 					light: ['git']
 				},
 				{
+					title: 'Agent syncs',
 					say: 'The agent sees that Git and the cluster differ, and applies the change.',
+					detail:
+						'Argo CD checks the repository about every three minutes by default, or straight away when a webhook tells it about a push. It marks the app OutOfSync and, with automated sync turned on, applies the new manifests to the cluster.',
 					set: { git: 'Git repo\nreplicas: 5', k8s: 'Cluster\nrunning: 5' },
 					send: [
 						['agent', 'git'],
@@ -1054,12 +1286,18 @@ LOG_LEVEL=info`,
 					]
 				},
 				{
+					title: 'Manual change',
 					say: 'Someone edits the cluster by hand and scales it down.',
+					detail:
+						'Someone runs kubectl scale to cut the copies to 1, perhaps to save money during a quiet hour. The cluster now differs from Git, and nothing in the repository records why or by whom, which is exactly the drift GitOps is meant to catch.',
 					set: { git: 'Git repo\nreplicas: 5', k8s: 'Cluster\nrunning: 1' },
 					light: ['k8s']
 				},
 				{
+					title: 'Self-healing',
 					say: 'The agent notices and puts it back. Git wins.',
+					detail:
+						'Argo CD sees the live object no longer matches Git and reapplies the manifest, back to 5 copies. This needs self-heal turned on in its sync policy, otherwise it only reports the app as OutOfSync. The lasting way to change the count is a commit.',
 					set: { git: 'Git repo\nreplicas: 5', k8s: 'Cluster\nrunning: 5' },
 					send: [['agent', 'k8s']],
 					light: ['agent']
@@ -1107,7 +1345,10 @@ return oldCheckout(cart);`,
 			],
 			steps: [
 				{
+					title: 'Ship it switched off',
 					say: 'The new checkout is merged and deployed, but its flag is off. Everyone still gets the old one.',
+					detail:
+						'The code for both checkouts is in production, and each request asks the flag service which one to use. With the flag off, the new path never runs, so unfinished work can sit on main and be deployed safely.',
 					send: [
 						['user', 'code'],
 						['code', 'old']
@@ -1115,7 +1356,10 @@ return oldCheckout(cart);`,
 					light: ['flag']
 				},
 				{
+					title: 'Staff only',
 					say: 'Turn it on for staff only. No deploy, just a change in the flag service.',
+					detail:
+						'A targeting rule tells the flag service to answer yes only for matching users, such as accounts with a company email address. The change takes effect within seconds, because the app checks the flag on each request or receives updates as they happen.',
 					set: { flag: 'Flags\nnew: staff' },
 					send: [
 						['flag', 'code'],
@@ -1124,7 +1368,10 @@ return oldCheckout(cart);`,
 					light: ['new']
 				},
 				{
+					title: 'Gradual rollout',
 					say: 'Then 10% of customers. Errors stay low, so keep going.',
+					detail:
+						'The flag service hashes each user ID into a bucket from 0 to 99, and users in buckets 0 to 9 get the new checkout. Hashing keeps each user in the same group on every visit, so nobody sees the checkout switch back and forth.',
 					set: { flag: 'Flags\nnew: 10%' },
 					send: [
 						['code', 'old'],
@@ -1132,13 +1379,19 @@ return oldCheckout(cart);`,
 					]
 				},
 				{
+					title: 'Kill switch',
 					say: 'At 50% a bug shows up. Flip the flag off, and users are back on the old path in seconds.',
+					detail:
+						'Turning the flag off reaches every server within seconds, with no build, test run or deploy. That is much faster than a rollback, and it leaves every other change in the release live, so the bug can be fixed calmly.',
 					set: { flag: 'Flags\nnew: off' },
 					send: [['code', 'old']],
 					down: ['new']
 				},
 				{
+					title: 'Clean up the flag',
 					say: 'After the fix and a full launch, delete the flag and the old code, or they pile up.',
+					detail:
+						'Every flag doubles the paths through that code, and old flags make it hard to know what actually runs. Once the feature is fully live, a small change removes the flag check and the old checkout, leaving one path to test and maintain.',
 					set: { flag: 'Flag\nremoved', code: 'New code only' },
 					hide: ['old'],
 					send: [['code', 'new']],
@@ -1188,7 +1441,10 @@ return oldCheckout(cart);`,
 			],
 			steps: [
 				{
+					title: 'Three signals',
 					say: 'Everything your services do leaves three kinds of evidence.',
+					detail:
+						'Each request can write log lines, update counters and timers for metrics, and record spans for a trace. With OpenTelemetry, one set of libraries collects all three and sends them to a collector, which forwards them to whichever tools you use.',
 					send: [
 						['svc', 'logs'],
 						['svc', 'metrics'],
@@ -1196,17 +1452,26 @@ return oldCheckout(cart);`,
 					]
 				},
 				{
+					title: 'Metrics raise the alarm',
 					say: 'Metrics show the symptom: the error rate jumped, and an alert fires.',
+					detail:
+						'Metrics are cheap numbers stored over time, like errors per second, so they suit dashboards and alerts. A rule such as error rate above 2% for five minutes fires the alert. Metrics tell you something is wrong, but not which request or why.',
 					send: [['metrics', 'dash']],
 					light: ['metrics', 'dash']
 				},
 				{
+					title: 'Traces find where',
 					say: 'Traces show where: requests are stuck in the payment call.',
+					detail:
+						'A trace follows one request across services, with a span for each step and how long it took. Here the spans show most of the time spent waiting on the payment provider, which narrows the search to one call out of dozens.',
 					send: [['traces', 'dash']],
 					light: ['traces']
 				},
 				{
+					title: 'Logs explain why',
 					say: 'Logs show why: an expired API key. Metrics say what, traces say where, logs say why.',
+					detail:
+						'Logs record single events with details, like the reply the payment provider sent back. Structured JSON logs tagged with the same trace ID let you jump from the slow span straight to its log lines, where a 401 Unauthorized error gives the answer.',
 					send: [['logs', 'dash']],
 					light: ['logs']
 				}
@@ -1252,28 +1517,43 @@ return oldCheckout(cart);`,
 			],
 			steps: [
 				{
+					title: 'The budget starts full',
 					say: 'The month starts with 43 minutes of allowed failure.',
+					detail:
+						'A 99.9% SLO allows 0.1% of the time to go wrong: 30 days is 43,200 minutes, and 0.1% of that is about 43. While budget remains, the team ships features at its normal pace.',
 					send: [['bud', 'ship']],
 					light: ['ship']
 				},
 				{
+					title: 'Spend some budget',
 					say: 'A bad deploy costs 15 minutes. You are still fine, so keep shipping.',
+					detail:
+						'Every minute users see errors comes out of the budget, here 15 of the 43. Spending some is expected, because it is the price of moving quickly. The budget turns arguments about risk into a number that product and engineering agreed together.',
 					set: { bud: 'Error budget\n28 min left' },
 					send: [['bud', 'ship']]
 				},
 				{
+					title: 'Budget spent',
 					say: 'An outage costs another 30 minutes, and the budget is gone.',
+					detail:
+						'Another 30 minutes brings the total to 45, two more than the target allows, so the SLO is missed for this window. Nobody is blamed: the number simply says users have had less reliability than was agreed.',
 					set: { bud: 'Error budget\n2 min over' },
 					light: ['bud']
 				},
 				{
+					title: 'Pause and fix',
 					say: 'Releases pause, and the team works on reliability instead.',
+					detail:
+						'An error budget policy, agreed in advance, says what happens now: feature releases stop, and only fixes and reliability work ship. Agreeing this before an outage avoids arguing about it during one.',
 					set: { bud: 'Error budget\n2 min over' },
 					send: [['bud', 'stop']],
 					light: ['stop']
 				},
 				{
+					title: 'The budget refills',
 					say: 'Next month the budget resets. Users got the reliability they need, and no more than that.',
+					detail:
+						'With a calendar month, the budget starts again at 43 minutes. Many teams use a rolling 30-day window instead, where old incidents age out day by day. Either way, aiming far above the target would cost speed that users would never notice.',
 					light: ['bud']
 				}
 			]
@@ -1312,24 +1592,42 @@ return oldCheckout(cart);`,
 				{ from: 'rev', to: 'det', label: 'better alerts', dashed: true }
 			],
 			steps: [
-				{ say: '02:14. An alert fires because checkout errors jumped.', light: ['det'] },
 				{
+					title: 'An alert fires',
+					say: '02:14. An alert fires because checkout errors jumped.',
+					detail:
+						'The alert watches a symptom users feel, the checkout error rate, so it fires before customers start calling. It pages whoever is on call through a tool like PagerDuty, which escalates to the next person if nobody acknowledges it.',
+					light: ['det']
+				},
+				{
+					title: 'Triage',
 					say: 'The on-call engineer takes the lead and checks what changed: a deploy ten minutes ago.',
+					detail:
+						'The incident lead coordinates and decides while others investigate, so effort is not wasted twice. The first question is what changed, because most incidents follow a deploy or a config change. A deploy log with timestamps answers it in seconds.',
 					send: [['det', 'tri']],
 					light: ['tri']
 				},
 				{
+					title: 'Mitigate now',
 					say: 'Roll back now. Service recovers while the cause is still unknown, and that is fine.',
+					detail:
+						'Mitigation means stopping the harm, not understanding it. Rolling back the suspect deploy is quick and usually safe, and the logs and traces are kept so the cause can be found later. Every extra minute spent debugging live is a minute customers suffer.',
 					send: [['tri', 'mit']],
 					light: ['mit']
 				},
 				{
+					title: 'Blameless review',
 					say: 'Next day, a blameless review finds the missing test and adds it.',
+					detail:
+						'The review writes a timeline and asks how the system let the bug through, not who caused it. People share details honestly when they are not afraid of punishment. Each finding becomes an action item with an owner, like the missing test here.',
 					send: [['mit', 'rev']],
 					light: ['rev']
 				},
 				{
+					title: 'Close the loop',
 					say: 'The fix improves the system, so this failure cannot happen the same way twice.',
+					detail:
+						'Action items such as new tests, better alerts or safer deploy steps strengthen the whole system, not just one piece of code. Tracking them to completion matters: a review whose actions never ship lets the same incident return.',
 					send: [['rev', 'det']]
 				}
 			]
@@ -1374,27 +1672,42 @@ return oldCheckout(cart);`,
 			],
 			steps: [
 				{
+					title: 'Secret blocked',
 					say: 'A developer accidentally commits an API key. The scan blocks it before it spreads.',
+					detail:
+						'A secret scanner, such as GitHub push protection or a gitleaks pre-commit hook, matches known key patterns before the commit is accepted. Once a key reaches a shared repository it lives in the history and in every clone, so blocking it early is far cheaper.',
 					down: ['code'],
 					set: { code: 'Commit\nblocked: secret' }
 				},
 				{
+					title: 'Rotate the key',
 					say: 'The key is removed and rotated, so the commit moves on.',
+					detail:
+						'Rotating means creating a new key and disabling the old one at the provider, so any copy that escaped is useless. The new key goes into a secrets manager and the app reads it at run time, so it never needs to be in Git.',
 					send: [['code', 'build']],
 					light: ['build']
 				},
 				{
+					title: 'Vulnerable dependency',
 					say: 'A library has a known vulnerability, so the build fails until it is upgraded.',
+					detail:
+						'A dependency scanner compares the libraries in the lockfile with public vulnerability databases, where each known flaw has a CVE number. Upgrading to a patched version clears it, and tools like Dependabot can open that pull request for you.',
 					set: { build: 'Build\nblocked: CVE' },
 					down: ['build']
 				},
 				{
+					title: 'Scan the image',
 					say: 'After the upgrade, the finished image is checked as well.',
+					detail:
+						'The image also holds an operating system layer with its own packages, like openssl, which the code scans never saw. A scanner such as Trivy checks those too, and a small base image means fewer packages that could be vulnerable.',
 					send: [['build', 'img']],
 					light: ['img']
 				},
 				{
+					title: 'Safe to ship',
 					say: 'Only what passes every check reaches production.',
+					detail:
+						'Each check runs automatically at the stage where a problem is cheapest to fix, so security adds minutes rather than weeks. Least privilege still applies in production: the running service gets only the access it needs, in case something slipped through.',
 					send: [['img', 'prod']],
 					light: ['prod']
 				}
@@ -1448,34 +1761,52 @@ return oldCheckout(cart);`,
 			],
 			steps: [
 				{
+					title: 'Burning at half speed',
 					say: 'The SLO is 99.9%, so 0.1% of requests may fail. Today 0.05% fail: the budget burns at half speed.',
+					detail:
+						'Burn rate is the actual error rate divided by the allowed one: 0.05% divided by 0.1% is 0.5. At that pace only half the budget would be used by the end of the 30 days, so no alert is needed.',
 					send: [['err', 'burn']],
 					light: ['burn']
 				},
 				{
+					title: 'A fast burn',
 					say: 'A bad deploy: 1.5% of requests fail. That burns the budget 15 times faster than allowed.',
+					detail:
+						'1.5% divided by the allowed 0.1% gives a burn rate of 15. At that speed the whole 30-day budget would be gone in about two days, far too fast to leave until morning.',
 					set: { err: 'Error rate\n1.5%', burn: 'Burn rate\n15' },
 					send: [['err', 'burn']],
 					light: ['err']
 				},
 				{
+					title: 'Page on two windows',
 					say: 'It stays high over both the hour and the last five minutes, so on-call is paged.',
+					detail:
+						'The rule needs a burn rate above 14.4 over the last hour, which means 2% of the budget is gone, and also over the last five minutes. The long window proves the problem is serious, and the short one proves it is still happening.',
 					set: { err: 'Error rate\n1.5%', burn: 'Burn rate\n15' },
 					send: [['burn', 'page']],
 					light: ['page']
 				},
 				{
+					title: 'The alert clears',
 					say: 'Rollback. The short window clears within minutes, and the page resolves itself.',
+					detail:
+						'Once errors stop, the five-minute burn rate drops below the threshold within minutes, even though the hour-long average stays high for a while. Without the short window, the page would keep firing for close to an hour after the fix.',
 					down: ['page'],
 					light: ['burn']
 				},
 				{
+					title: 'A slow burn',
 					say: 'Later a small leak: 0.1% errors, day after day. A burn rate of 1 is too slow to page anyone.',
+					detail:
+						'A burn rate of 1 spends the budget exactly by the end of the 30 days, so it is a real problem but not an emergency. Paging someone at 3am for it would teach people to ignore pages, which is the bigger risk.',
 					set: { err: 'Error rate\n0.1%', burn: 'Burn rate\n1' },
 					send: [['err', 'burn']]
 				},
 				{
+					title: 'Open a ticket',
 					say: 'After three days it has spent 10% of the budget, so it opens a ticket for working hours.',
+					detail:
+						'The ticket rule checks a three-day window, backed by a six-hour short window, at a burn rate of 1. That catches leaks too small for a page, and the team can find the cause in working hours, well before the budget runs out.',
 					set: { err: 'Error rate\n0.1%', burn: 'Burn rate\n1' },
 					send: [['burn', 'ticket']],
 					light: ['ticket']

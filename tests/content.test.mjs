@@ -44,6 +44,16 @@ test('every demo moves something or changes the picture on each step after the f
 	}
 });
 
+test('every step has a short title and explains how it works in more detail', () => {
+	for (const { alt, steps } of sketches) {
+		for (const s of steps) {
+			// the title also sits on the Next button, so it must stay short
+			assert.ok(s.title && s.title.length <= 28, `title: ${s.say}: ${alt}`);
+			assert.ok(s.detail && s.detail.length >= 80 && s.detail !== s.say, `detail: ${s.say}`);
+		}
+	}
+});
+
 test('every diagram says what kind of diagram it is', () => {
 	for (const s of sketches) assert.ok(s.kind, s.alt);
 });

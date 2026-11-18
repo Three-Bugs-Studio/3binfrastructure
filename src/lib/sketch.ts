@@ -20,7 +20,9 @@ export type SketchEdge = {
 
 // Each step describes its whole picture, so stepping backwards needs no undo logic.
 export type DemoStep = {
+	title: string; // a few words, shown on the step and on the Next button
 	say: string;
+	detail: string; // how it works, in a few more sentences
 	send?: [from: string, to: string][]; // dots that travel between nodes
 	light?: string[]; // circled in red pen
 	down?: string[]; // crossed out

@@ -75,23 +75,35 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'The widest view',
 					say: 'System architecture is the widest view: servers, networks, outside systems and the software, all together.',
+					detail:
+						'At this level you draw everything the product depends on, not just code: machines, networks, third-party services and the links between them. It is the picture an operations team or an auditor needs, because outages often start outside the code, for example when a DNS or payment provider goes down.',
 					light: ['infra', 'ext']
 				},
 				{
+					title: 'Zoom into the software',
 					say: 'Zoom in. Software architecture looks at one application and how its parts are organised.',
+					detail:
+						'The servers and outside systems drop away and you look at how one application is split up, such as a UI layer that calls an API layer. The questions change too: which part owns which job, and which calls are allowed. A rule like "the UI never talks to the database" lives at this level.',
 					hide: ['infra', 'ext'],
 					light: ['ui', 'api'],
 					send: [['ui', 'api']]
 				},
 				{
+					title: 'Zoom into one part',
 					say: 'Zoom in again. System design explains how one part really works.',
+					detail:
+						'System design picks one piece, like checkout, and explains its inner workings: the data it keeps, the steps it runs and how it handles errors. This is where you decide details such as retrying a failed payment call or holding stock while an order completes.',
 					hide: ['infra', 'ext', 'ui'],
 					light: ['fn'],
 					send: [['api', 'fn']]
 				},
 				{
+					title: 'Pick your level',
 					say: 'Same system, three levels of detail. Pick the level that fits the question you are answering.',
+					detail:
+						'None of the three views is right on its own. A question about an outage usually needs the widest view, while a bug in checkout needs the closest one. Mixing levels in one drawing is the usual reason a diagram turns into an unreadable wall of boxes.',
 					send: [
 						['infra', 'ui'],
 						['ext', 'fn']
@@ -156,21 +168,33 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Arrive at an interface',
 					say: 'A request arrives at an interface: the contract that says what callers may ask for.',
+					detail:
+						'An interface is an agreement: which operations exist, what data they take and what they return, such as POST /orders with a JSON body. Callers depend only on this contract, so the code behind it can be rewritten as long as the contract still holds.',
 					light: ['iface']
 				},
 				{
+					title: 'Run the business rules',
 					say: 'The software does the work and applies the business rules.',
+					detail:
+						'The software decides what the request means, for example whether this customer may order and what it should cost. It usually keeps no state between requests, so the same code can run on one machine or twenty and behave the same way.',
 					light: ['sw'],
 					send: [['iface', 'sw']]
 				},
 				{
+					title: 'Read and write data',
 					say: 'It reads and writes data, the part of the system that must outlive everything else.',
+					detail:
+						'Code is redeployed many times a week, but an order placed today must still be correct in ten years. That is why data needs backups, migrations and clear ownership. A bad deploy can be rolled back in minutes, while corrupted data can take days to repair.',
 					light: ['data'],
 					send: [['sw', 'data']]
 				},
 				{
+					title: 'Run on infrastructure',
 					say: 'All of it runs on infrastructure, so its limits become your limits.',
+					detail:
+						'Every request uses CPU, memory, disk and network on some machine, even in the cloud. If a cloud disk is rated at 3,000 operations per second, no clever code makes it do 30,000. Knowing those ceilings early stops you designing for a speed the hardware cannot give.',
 					light: ['hw'],
 					send: [
 						['sw', 'hw'],
@@ -229,7 +253,10 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'One front door',
 					say: 'The web and mobile apps both call one front door instead of knowing every service.',
+					detail:
+						'Without a gateway, every client would need the address and API style of every service, and moving a service would break apps already installed on phones. Here both clients send plain REST over HTTPS to one host name, such as api.example.com, and the gateway hides what sits behind it.',
 					send: [
 						['web', 'gw'],
 						['mobile', 'gw']
@@ -237,17 +264,26 @@ export const architecture: Topic[] = [
 					light: ['gw']
 				},
 				{
+					title: 'Check login and limits',
 					say: 'The gateway checks the login and the rate limit before anything else runs.',
+					detail:
+						'The gateway validates the token on each request, often a signed JWT, so the services do not each repeat that work. It also counts requests per client, for example 100 a minute, usually in a shared store like Redis so every gateway copy sees the same total.',
 					set: { gw: 'Auth OK\nLimit OK' },
 					light: ['gw']
 				},
 				{
+					title: 'Route over gRPC',
 					say: 'It routes the call to the right service over fast internal gRPC.',
+					detail:
+						'Inside the network the gateway switches to gRPC, which sends compact binary Protocol Buffers over HTTP/2 instead of JSON text. Both sides share a .proto file that describes every call, so client code is generated rather than written by hand.',
 					send: [['gw', 'orders']],
 					light: ['orders']
 				},
 				{
+					title: 'Turn away extra calls',
 					say: 'A caller over its rate limit gets turned away here, so the services behind never feel it.',
+					detail:
+						'Once a client passes its limit, the gateway answers with HTTP 429 Too Many Requests, often with a Retry-After header saying when to try again. The request never reaches Users or Orders, so one runaway script cannot use up capacity meant for everyone else.',
 					send: [['web', 'gw']],
 					set: { gw: '429\nToo many' },
 					down: ['web']
@@ -295,24 +331,36 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Plain function calls',
 					say: 'A request passes through the modules as plain function calls, which is fast and simple.',
+					detail:
+						'Inside one process, moving from the UI module to Orders is an ordinary function call that takes nanoseconds and cannot get lost on a network. There is no converting to JSON, no timeouts and no retries to write, which is a big part of why monoliths are quick to build.',
 					send: [
 						['user', 'ui'],
 						['ui', 'orders']
 					]
 				},
 				{
+					title: 'One shared database',
 					say: 'Everything shares one database, so a transaction across modules is easy.',
+					detail:
+						'Because orders and payments live in the same database, one transaction can write both and then either commit both or roll both back. The database gives you that guarantee for free, where microservices would need a saga to get something close.',
 					send: [['orders', 'db']],
 					light: ['db']
 				},
 				{
+					title: 'A bug in Payments',
 					say: 'Now a bug appears in Payments, and the process crashes.',
+					detail:
+						'All modules share one process, one block of memory and one pool of threads. An unhandled error, a memory leak or an endless loop in Payments therefore hits the same runtime that serves the UI and Orders, with no wall between them.',
 					light: ['pay'],
 					send: [['orders', 'pay']]
 				},
 				{
+					title: 'Everything goes down',
 					say: 'Because it is one unit, the whole app goes down with it.',
+					detail:
+						'Users who only wanted to browse now get errors too, because the browsing code was in the crashed process. Running several copies behind a load balancer helps with random crashes, but a bug that crashes one copy will usually crash them all.',
 					down: ['ui', 'orders', 'pay']
 				}
 			]
@@ -360,18 +408,34 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'The browser asks',
 					say: 'The browser asks the server for a list of orders.',
+					detail:
+						'The browser sends an HTTP request made of a method, a path and some headers, here GET /orders. GET means "read only", so it should not change anything on the server and is safe to repeat if the network drops.',
 					send: [['c1', 's1']],
 					light: ['c']
 				},
 				{
+					title: 'The server queries',
 					say: 'The server does not hold the data itself, so it queries the database.',
+					detail:
+						'Keeping data in a database rather than in the server process means any copy of the server can answer any request. The server builds a SQL query, ideally with parameters rather than pasted-in text, which is what protects it from SQL injection.',
 					send: [['s2', 'd2']],
 					light: ['s']
 				},
-				{ say: 'The rows come back.', send: [['d3', 's3']], light: ['d'] },
 				{
+					title: 'Rows come back',
+					say: 'The rows come back.',
+					detail:
+						'The database returns a result set, a table of rows that match the query. The server should ask only for what it needs, for example with LIMIT 50, because pulling a whole table across the network is a common cause of slow pages.',
+					send: [['d3', 's3']],
+					light: ['d']
+				},
+				{
+					title: 'Send the response',
 					say: 'The server turns them into a response. Time flows down the page in this kind of diagram.',
+					detail:
+						'The server converts the rows into JSON or HTML and replies with a status code, here 200 OK for success. Each vertical line is one participant, and reading top to bottom shows the browser waiting for the whole round trip before it can draw anything.',
 					send: [['s4', 'c4']],
 					light: ['c']
 				}
@@ -417,28 +481,43 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Route to the owner',
 					say: 'The gateway routes each request to the service that owns it.',
+					detail:
+						'The gateway matches the request path, such as /orders/42, to the service responsible for orders. Each service owns one clear area of the business, so its team can change and deploy it without asking the others.',
 					send: [['gw', 'orders']]
 				},
 				{
+					title: 'Call across the network',
 					say: 'Orders needs a payment, so it makes a call across the network.',
+					detail:
+						'What was a function call in a monolith is now an HTTP or gRPC request that can be slow, time out or fail halfway. Orders must set a timeout, often a second or two, and decide what to do when no answer comes back.',
 					send: [['orders', 'pay']],
 					light: ['pay']
 				},
 				{
+					title: 'Own your data',
 					say: 'Each service owns its own data. Nobody else reaches into its database.',
+					detail:
+						'Payments keeps its data in Pay DB and no other service has the credentials. If Orders needs payment details, it asks the Payments API. That keeps the table layout private, so Payments can change its schema without breaking another team.',
 					send: [
 						['orders', 'odb'],
 						['pay', 'pdb']
 					]
 				},
 				{
+					title: 'Survive a failure',
 					say: 'Payments fails. Orders still works, as long as it handles the failed call.',
+					detail:
+						'Because the services run as separate processes, a crash in Payments does not kill Orders. Orders still has to cope, for example by marking the order as awaiting payment and retrying later, and a circuit breaker stops it waiting on a service that is clearly down.',
 					down: ['pay', 'pdb'],
 					send: [['gw', 'orders']]
 				},
 				{
+					title: 'Scale one service',
 					say: 'Black Friday hits Orders, so you scale just that service.',
+					detail:
+						'You run three copies of Orders behind a load balancer and leave Payments at one. That only works if Orders keeps no session state in memory, so any copy can serve any request. In Kubernetes it is a change to one replica count.',
 					set: { orders: 'Orders x 3' },
 					light: ['orders']
 				}
@@ -485,21 +564,36 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Publish a fact',
 					say: 'Checkout publishes a fact: OrderPlaced. It does not know or care who is listening.',
+					detail:
+						'Checkout writes a small message, such as OrderPlaced with an order id, to the event bus and carries on. It keeps no list of receivers, so it never waits on them and never breaks when one of them is slow or offline.',
 					hide: ['c'],
 					send: [['co', 'bus']]
 				},
 				{
+					title: 'Each subscriber reacts',
 					say: 'Every subscriber gets its own copy and reacts in its own time.',
+					detail:
+						'Billing and Shipping each subscribe and receive their own copy. A slow shipping service just falls behind for a while instead of blocking billing. Most buses deliver at least once, so a consumer must cope with seeing the same event twice.',
 					hide: ['c'],
 					send: [
 						['bus', 'a'],
 						['bus', 'b']
 					]
 				},
-				{ say: 'Later you add Analytics. Checkout does not change at all.', light: ['c'] },
 				{
+					title: 'Add a new listener',
+					say: 'Later you add Analytics. Checkout does not change at all.',
+					detail:
+						'Analytics subscribes to the same OrderPlaced events with no code change and no deploy in Checkout. With a log-based bus like Kafka, a new subscriber can even start from older events still kept in the log and catch up on history.',
+					light: ['c']
+				},
+				{
+					title: 'Reach every subscriber',
 					say: 'The next event reaches all three.',
+					detail:
+						'Now each OrderPlaced event fans out to three consumers. The cost shows when something goes wrong: to find out why a refund happened you need an id passed along in every event, because no single call stack shows the whole story.',
 					send: [
 						['bus', 'a'],
 						['bus', 'b'],
@@ -538,24 +632,44 @@ export const architecture: Topic[] = [
 				{ from: 'fn', to: 'db' }
 			],
 			steps: [
-				{ say: 'No traffic means nothing is running, and you pay nothing.', light: ['fn'] },
 				{
+					title: 'Scale to zero',
+					say: 'No traffic means nothing is running, and you pay nothing.',
+					detail:
+						'With no events, the platform keeps no copies of your function running. You are billed per request and per slice of run time, per millisecond on AWS Lambda, so quiet hours cost almost nothing.',
+					light: ['fn']
+				},
+				{
+					title: 'Cold start',
 					say: 'An event arrives. The platform starts a copy, which is the slight delay called a cold start.',
+					detail:
+						'For the first event, the platform has to find a machine, load your code and start the language runtime before your handler runs. That can add from about a hundred milliseconds to a few seconds, depending on the language and package size. Later events reuse the warm copy.',
 					send: [['ev', 'fn']],
 					set: { fn: 'Function\n1 running' }
 				},
 				{
+					title: 'Scale out fast',
 					say: 'A spike hits and the platform runs hundreds of copies at once.',
+					detail:
+						'Each copy usually handles one event at a time, so the platform starts more copies as events pile up. There are account limits, such as a default of 1,000 concurrent Lambda copies per region, and whatever sits behind them must cope with the same burst.',
 					send: [['ev', 'fn']],
 					set: { fn: 'Function\n500 running' },
 					light: ['fn']
 				},
 				{
+					title: 'Write the results',
 					say: 'They all finish their work and write the results.',
+					detail:
+						'Functions keep nothing between runs, so anything that matters must go to outside storage. Five hundred copies writing at once can swamp a traditional database with connections, which is why teams often put a queue in between or use storage that scales the same way.',
 					send: [['fn', 'db']],
 					set: { fn: 'Function\n500 running' }
 				},
-				{ say: 'Traffic stops, the copies disappear, and the bill stops too.' }
+				{
+					title: 'Back to zero',
+					say: 'Traffic stops, the copies disappear, and the bill stops too.',
+					detail:
+						'After a quiet period the platform shuts idle copies down, and you stop paying for them. The trade-off is that the next event pays the cold start again, which is why steady, heavy traffic is often cheaper on an always-on server.'
+				}
 			]
 		}
 	},
@@ -599,14 +713,27 @@ export const architecture: Topic[] = [
 				{ from: 'data', to: 'db' }
 			],
 			steps: [
-				{ say: 'The request enters at the top layer.', send: [['user', 'ui']], light: ['ui'] },
 				{
+					title: 'Enter at the top',
+					say: 'The request enters at the top layer.',
+					detail:
+						'The presentation layer receives the click or HTTP request and turns it into a clean call, such as cancelOrder(42). It handles screen concerns like form error messages, but makes no decision about whether a cancellation is allowed.',
+					send: [['user', 'ui']],
+					light: ['ui']
+				},
+				{
+					title: 'Hand down one layer',
 					say: 'Each layer does its one job, then hands over to the layer below.',
+					detail:
+						'Business logic applies the rules, for example that orders can be cancelled until they ship. It calls only the layer directly below, so each layer depends on one neighbour, which keeps the code easier to follow and to test.',
 					send: [['ui', 'logic']],
 					light: ['logic']
 				},
 				{
+					title: 'Hide the storage',
 					say: 'Only the bottom layer knows how the data is stored.',
+					detail:
+						'The data access layer turns a request like "load order 42" into SQL and hands back plain objects. Since only this layer knows table names, you can add an index or rewrite a query without touching the rules or the screens.',
 					send: [
 						['logic', 'data'],
 						['data', 'db']
@@ -614,7 +741,10 @@ export const architecture: Topic[] = [
 					light: ['data']
 				},
 				{
+					title: 'Changes ripple',
 					say: 'The weakness: adding one new field means touching every layer.',
+					detail:
+						'A new field such as a delivery note needs a database column, a change in data access, a rule in the logic and a box on the screen. That is four places, often owned by different people, which is why many teams group code by feature on top of the layers.',
 					light: ['ui', 'logic', 'data']
 				}
 			]
@@ -654,22 +784,34 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Drive through an adapter',
 					say: 'The web adapter translates an HTTP request into a call on the core.',
+					detail:
+						'The web adapter reads the URL, headers and JSON body, then calls a plain method on the core, like placeOrder(customerId, items). All the HTTP detail stops at the adapter, so the core never sees a request object or a status code.',
 					send: [['web', 'core']],
 					light: ['core']
 				},
 				{
+					title: 'Call through a port',
 					say: 'The core asks for "save this order" through a port. It has no idea what stores it.',
+					detail:
+						'A port is an interface the core owns, such as OrderRepository with a save method, and the Postgres adapter implements it. The dependency points inward: the adapter imports the core, never the other way round, which is the whole trick of the pattern.',
 					send: [['core', 'db']]
 				},
 				{
+					title: 'Swap the adapter',
 					say: 'You move to MySQL by swapping one adapter. The core does not change.',
+					detail:
+						'You write a MySQL adapter for the same port and change which one is wired in at start-up. The business rules and their tests stay untouched. Moving the data itself is still real work, but the core is no longer in the way.',
 					set: { db: 'MySQL\nadapter' },
 					light: ['db'],
 					send: [['core', 'db']]
 				},
 				{
+					title: 'Test without infrastructure',
 					say: 'Tests drive the same core with no web server or database at all.',
+					detail:
+						'A test adapter calls the core directly, and an in-memory fake stands in for the database port. These tests run in milliseconds with nothing to start up, so you can afford to check every business rule thoroughly.',
 					send: [['test', 'core']],
 					light: ['test']
 				}
@@ -730,24 +872,42 @@ export const architecture: Topic[] = [
 				{ from: 'q2', to: 'a3', label: 'no' }
 			],
 			steps: [
-				{ say: 'Start with your team, not the technology.', light: ['q1'] },
 				{
+					title: 'Start with the team',
+					say: 'Start with your team, not the technology.',
+					detail:
+						"Team size and how the work is split decide more than any technology. Conway's law says a system tends to copy the communication structure of the organisation that builds it, so a style that fights your team shape will cost you every day.",
+					light: ['q1']
+				},
+				{
+					title: 'Stop at a monolith',
 					say: 'A small team with one domain should stop here. A modular monolith is plenty.',
+					detail:
+						'With a few developers and one business area, a modular monolith gives clear boundaries without the network calls, pipelines and monitoring that many services need. If one module later has to stand alone, its boundary already exists.',
 					send: [['q1', 'a1']],
 					light: ['a1']
 				},
 				{
+					title: 'Look at the workload',
 					say: 'Otherwise, ask what your workload looks like.',
+					detail:
+						'The next question is how work arrives. Steady traffic from people clicking through pages suits long-running services, while sudden bursts or work set off by outside events suit a different shape.',
 					send: [['q1', 'q2']],
 					light: ['q2']
 				},
 				{
+					title: 'Bursts and events',
 					say: 'Bursts of work or streams of events point to serverless or event-driven designs.',
+					detail:
+						'Serverless functions cost nothing when idle and scale out on demand, which suits traffic that jumps from zero to thousands of requests. Event-driven designs suit flows where one thing happening, like a file upload, should start several separate jobs.',
 					send: [['q2', 'a2']],
 					light: ['a2']
 				},
 				{
+					title: 'When services pay off',
 					say: 'Many teams and steady, separate domains are where microservices earn their cost.',
+					detail:
+						'Microservices make sense when several teams need to deploy on their own schedule and the business areas really are separate. The price is tracing across services, versioned APIs and on-call duty for each one, so they pay off with dozens of engineers, not three.',
 					send: [['q2', 'a3']],
 					light: ['a3']
 				}
@@ -800,24 +960,42 @@ export const architecture: Topic[] = [
 				{ from: 'res', to: 'req', label: 'repeat', dashed: true }
 			],
 			steps: [
-				{ say: 'Write down what the system must do and what limits it.', light: ['req'] },
 				{
+					title: 'Write the requirements',
+					say: 'Write down what the system must do and what limits it.',
+					detail:
+						'Requirements come in two kinds: what the system does, like taking payments, and the limits it works within, like answering in under 200 ms or staying up 99.9% of the time. That second kind, called non-functional requirements, is what shapes the architecture.',
+					light: ['req']
+				},
+				{
+					title: 'Choose the pattern',
 					say: 'Let those constraints choose the pattern, not your preferences.',
+					detail:
+						'Each constraint rules options in or out. A rule that EU data stays in the EU limits where you can host, and a team of four rules out running twenty services. Writing the choice down in a short architecture decision record keeps the reasoning for later readers.',
 					send: [['req', 'pat']],
 					light: ['pat']
 				},
 				{
+					title: 'Map the dependencies',
 					say: 'Map what talks to what, so a small change does not turn into a surprise project.',
+					detail:
+						'List every service, database, queue and outside API, and draw which calls which. Hidden coupling, such as two services reading the same table, shows up on the map long before it shows up as an outage or a blocked release.',
 					send: [['pat', 'dep']],
 					light: ['dep']
 				},
 				{
+					title: 'Plan for failure',
 					say: 'Decide what happens when each part fails.',
+					detail:
+						'For each dependency, decide what happens when it is slow or down: a timeout, a retry with backoff, a fallback or a clear error. A circuit breaker stops calls to a failing service for a while, so one slow part does not tie up every caller.',
 					send: [['dep', 'res']],
 					light: ['res']
 				},
 				{
+					title: 'Go round again',
 					say: 'Then the business changes, and you go round again. Architecture is never finished.',
+					detail:
+						'New markets, more users or new laws change the constraints, so earlier choices need another look. Treat the architecture as a living document that is reviewed whenever a constraint moves, not a diagram signed off once and forgotten.',
 					send: [['res', 'req']]
 				}
 			]
@@ -861,24 +1039,42 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Talk to one layer',
 					say: 'The new front end talks only to the integration layer, never to the old system directly.',
+					detail:
+						'The new front end calls stable, modern endpoints on the integration layer and has no idea which system answers. That single point of contact is what later lets you move work from old to new without touching the front end at all.',
 					hide: ['new'],
 					send: [['ui', 'gw']]
 				},
 				{
+					title: 'Translate the call',
 					say: 'The layer translates the call into whatever the legacy system understands.',
+					detail:
+						'Legacy systems often speak SOAP, fixed-width files or stored procedures. The integration layer turns a modern JSON request into that format and maps the reply back, keeping the old quirks out of the new code. This piece is often called an anti-corruption layer.',
 					hide: ['new'],
 					send: [['gw', 'old']],
 					light: ['old']
 				},
-				{ say: 'You build a replacement for one capability and run it alongside.', light: ['new'] },
 				{
+					title: 'Build one replacement',
+					say: 'You build a replacement for one capability and run it alongside.',
+					detail:
+						'You pick a single capability, here billing, and rebuild it as a new service while the old one keeps running. Running both side by side lets you compare their results on real data before you trust the new one.',
+					light: ['new']
+				},
+				{
+					title: 'Shift the traffic',
 					say: 'Traffic moves over. The front end never noticed.',
+					detail:
+						'The integration layer now routes billing calls to the new service, often a small share first, like 5%, then more as confidence grows. If something goes wrong, sending traffic back to the old system is a configuration change, not a code rollback.',
 					send: [['gw', 'new']],
 					light: ['new']
 				},
 				{
+					title: 'Switch off the old part',
 					say: 'When nothing uses the old part, you switch it off.',
+					detail:
+						'Once the logs show no calls reaching legacy billing, it can be retired along with its servers and licences. This slice-by-slice approach is the strangler fig pattern, named after a plant that slowly grows around a tree until it replaces it.',
 					down: ['old'],
 					send: [['gw', 'new']]
 				}
@@ -923,24 +1119,42 @@ export const architecture: Topic[] = [
 				{ from: 'old', to: 'cut' }
 			],
 			steps: [
-				{ say: 'A deadline is close, so someone takes a shortcut.', light: ['cut'] },
 				{
+					title: 'Take a shortcut',
+					say: 'A deadline is close, so someone takes a shortcut.',
+					detail:
+						"Under deadline pressure someone hardcodes a value or reads another module's table directly, because it works today. One shortcut is cheap. The cost is the interest: every later change has to work around it.",
+					light: ['cut']
+				},
+				{
+					title: 'Hidden coupling',
 					say: 'Two parts now secretly depend on each other.',
+					detail:
+						'Changing one part now silently changes the other, but nothing in the code structure or the diagrams says so. These links are usually found only when something breaks, often in production, and often by someone who was not there when the shortcut was taken.',
 					send: [['cut', 'tie']],
 					light: ['tie']
 				},
 				{
+					title: 'Changes slow down',
 					say: 'A small refactor turns into a quarter-long project.',
+					detail:
+						'Each change now needs extra checks, meetings between teams and careful testing of parts that should be unrelated. Estimates grow, and under that pressure the quickest-looking fix is often another shortcut.',
 					send: [['tie', 'slow']],
 					light: ['slow']
 				},
 				{
+					title: 'Diagrams go stale',
 					say: 'Nobody has time to update the diagrams, so they stop matching reality.',
+					detail:
+						'Drawings kept in a slide deck are rarely updated after a busy release. Within weeks they describe a system that no longer exists, so newcomers learn the wrong picture and everyone else stops trusting diagrams at all.',
 					send: [['slow', 'old']],
 					light: ['old']
 				},
 				{
+					title: 'Break the loop',
 					say: 'With no clear picture, the next shortcut looks harmless. Break the loop by keeping the map current.',
+					detail:
+						'Diagrams written as code, in Mermaid or Structurizr for example, live in the same repository and get reviewed in the same pull request as the change. Some teams add architecture tests that fail the build when a forbidden dependency appears, which catches the next shortcut early.',
 					send: [['old', 'cut']]
 				}
 			]
@@ -997,23 +1211,41 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Down its own layers',
 					say: 'A request reaches the Order module and passes down its own layers.',
+					detail:
+						'Inside the Order module, the controller calls the order service, which uses the order repository. All three are private to Order, so the module behaves like a small application of its own inside the larger one.',
 					send: [['oc', 'os']],
 					light: ['os']
 				},
 				{
+					title: 'Reach for the repository',
 					say: 'Order needs a product price, and reaches straight for the Product repository.',
+					detail:
+						'Reading Product data straight from its repository is quick to write and works on day one. But it ties Order to how Product stores its data, so any change to that table or query now risks breaking orders too.',
 					send: [['os', 'pr']],
 					light: ['pr']
 				},
-				{ say: 'That is blocked. The repository is private to the Product module.', down: ['pr'] },
 				{
+					title: 'Blocked at the boundary',
+					say: 'That is blocked. The repository is private to the Product module.',
+					detail:
+						'The Product repository is not visible outside its module, so the call fails to compile or fails a boundary check in the build. In Java this can be package-private classes, or a tool such as ArchUnit or Spring Modulith that verifies module rules in a test.',
+					down: ['pr']
+				},
+				{
+					title: 'Use the interface',
 					say: 'Order goes through the Product interface instead.',
+					detail:
+						'The Product interface offers a small, deliberate set of calls, such as getPrice(productId). It returns only what other modules need, usually as a DTO rather than the internal model, so the contract stays small and stable.',
 					send: [['os', 'pi']],
 					light: ['pi']
 				},
 				{
+					title: 'Free to change inside',
 					say: 'The Product module decides how to answer, so its insides can change freely.',
+					detail:
+						'Behind the interface, the Product team can add a cache, split a table or rewrite the service without telling anyone. If Product later becomes its own microservice, the interface becomes its API and callers barely change.',
 					send: [
 						['pi', 'ps'],
 						['ps', 'pr']
@@ -1072,26 +1304,44 @@ export const architecture: Topic[] = [
 				{ from: 'd', to: 'c' }
 			],
 			steps: [
-				{ say: 'The screen only needs to show a list of friends.', light: ['c'] },
 				{
+					title: 'What the screen needs',
+					say: 'The screen only needs to show a list of friends.',
+					detail:
+						'A friend list shows a name and a picture for each person, nothing more. Starting from what the consumer actually displays is the simplest way to decide which fields belong in a response.',
+					light: ['c']
+				},
+				{
+					title: 'Send the whole model',
 					say: 'Without a DTO, the whole Model is sent, card number included.',
+					detail:
+						'Returning the model is tempting because most frameworks turn any object into JSON in one line. Every field comes along, including email and card number, and any field added to the model later will leak automatically too.',
 					hide: ['d'],
 					send: [['m', 'c']],
 					down: ['m']
 				},
 				{
+					title: 'Exposed in the browser',
 					say: 'The browser never used that field, but anyone can read it in the network tab.',
+					detail:
+						'Not showing a field on screen does not protect it. Anyone can open the developer tools, look at the response in the Network tab and read every field. The OWASP API Security Top 10 has listed this as a major risk, first under the name excessive data exposure.',
 					hide: ['d'],
 					light: ['c'],
 					set: { c: 'Card no.\nexposed!' }
 				},
 				{
+					title: 'Copy only needed fields',
 					say: 'With a DTO, the service copies just the two fields the screen needs.',
+					detail:
+						'The service builds a Friend DTO by copying just the name and avatar from the model. Because fields are added on purpose, a new sensitive column on the model stays private unless someone deliberately adds it to the DTO.',
 					send: [['m', 'd']],
 					light: ['d']
 				},
 				{
+					title: 'Only safe data leaves',
 					say: 'Only those fields leave the system. Sensitive data has no way out.',
+					detail:
+						"The response now holds exactly two fields per friend, which also makes it smaller and faster to send. A different screen, like the user's own profile page, can use a different DTO built from the same model.",
 					send: [['d', 'c']],
 					light: ['c']
 				}
@@ -1134,17 +1384,26 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Register at start-up',
 					say: 'When it starts, the service tells the registry its name and address.',
+					detail:
+						'On boot the service sends its name, order-service, with its IP address and port to the registry. It then renews that entry with a heartbeat, every 30 seconds by default in Eureka, and an instance that stops renewing is dropped from the list.',
 					send: [['os', 'sd']],
 					light: ['sd']
 				},
 				{
+					title: 'One known address',
 					say: 'The frontend knows only one address: the gateway.',
+					detail:
+						"The frontend is configured with the gateway URL only. Services behind it can move, multiply or be split up without any change to the frontend build or to the apps already on users' phones.",
 					send: [['fe', 'gw']],
 					light: ['gw']
 				},
 				{
+					title: 'Look up and forward',
 					say: 'The gateway asks the registry where order-service is, then forwards the request.',
+					detail:
+						'The gateway sees a route like lb://order-service, asks the registry for live instances and picks one, spreading the load when there are several. It usually caches that list for a short time instead of asking the registry on every request.',
 					send: [
 						['gw', 'sd'],
 						['gw', 'os']
@@ -1152,13 +1411,19 @@ export const architecture: Topic[] = [
 					light: ['os']
 				},
 				{
+					title: 'New address after restart',
 					say: 'The service restarts and gets a new address, so old hard-coded URLs would now fail.',
+					detail:
+						'In the cloud, a restarted container usually gets a fresh IP address from the network. Any config that pinned 10.0.0.7 would now send requests to nothing, and those calls would fail with connection errors or time out.',
 					set: { os: 'Order service\n10.0.0.92' },
 					light: ['os'],
 					send: [['os', 'sd']]
 				},
 				{
+					title: 'Traffic keeps flowing',
 					say: 'The registry already has the new address, so the frontend never notices.',
+					detail:
+						'The new instance registered itself on start-up, so the next lookup returns 10.0.0.92. For a few seconds a cached list may still hold the old address, so gateways are usually set to retry another instance when a call fails to connect.',
 					set: { os: 'Order service\n10.0.0.92' },
 					send: [
 						['fe', 'gw'],
@@ -1200,20 +1465,36 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Separate databases',
 					say: 'Each service owns its own data.',
+					detail:
+						'Only the order service has credentials for Orders DB, and only the product service for Products DB. Each team can also pick the database that fits, for example Postgres for orders and a search engine for product lookups.',
 					send: [
 						['o', 'od'],
 						['p', 'pd']
 					]
 				},
-				{ say: 'A big sale floods the order service.', light: ['o'], send: [['o', 'od']] },
 				{
+					title: 'Orders under load',
+					say: 'A big sale floods the order service.',
+					detail:
+						'During a sale, order writes may jump tenfold while product data barely changes. With one shared database, that write load would slow product pages too, because both would compete for the same CPU, disk and connections.',
+					light: ['o'],
+					send: [['o', 'od']]
+				},
+				{
+					title: 'Scale one database',
 					say: 'You scale just the orders database, and products are left alone.',
+					detail:
+						'You give only Orders DB more capacity, for example a bigger machine or extra read replicas, shown here as x 5. Products DB keeps its normal size and cost, and the people browsing products never feel the sale.',
 					set: { od: 'Orders DB\nx 5' },
 					light: ['od']
 				},
 				{
+					title: 'Ask, do not reach in',
 					say: 'Orders needs a product name, so it asks the Product service, not its database.',
+					detail:
+						'Orders calls the Product API, which reads Products DB and returns the name. That adds a network call, so services often keep their own copy of data they need a lot, such as the product name at the moment the order was placed.',
 					set: { od: 'Orders DB\nx 5' },
 					send: [
 						['o', 'p'],
@@ -1270,29 +1551,44 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Write and reply',
 					say: 'The order service writes one event, and replies to the user straight away.',
+					detail:
+						'The order service appends one message to the order-placed topic and answers the user without waiting for billing or email. With REST calls in a chain, the user would wait for every downstream service, one after another.',
 					send: [['o', 'k']],
 					light: ['k']
 				},
 				{
+					title: 'Replicate the event',
 					say: 'Kafka copies the event to a replica on another broker.',
+					detail:
+						'Each partition has a leader broker and follower copies on other brokers, often three copies in all. With the producer setting acks=all, a write is confirmed only once the in-sync copies have it, so losing one broker does not lose the event.',
 					send: [['k', 'r']],
 					light: ['r']
 				},
 				{
+					title: 'Read at their own pace',
 					say: 'Each consumer group reads the event at its own speed.',
+					detail:
+						'Billing and Email are separate consumer groups, so each receives every event. Each group stores its own offset, a bookmark saying how far it has read, so a fast group and a slow group never hold each other up.',
 					send: [
 						['k', 'b'],
 						['k', 'e']
 					]
 				},
 				{
+					title: 'A consumer goes down',
 					say: 'The Email service goes down. Orders keep working, and events wait in the log.',
+					detail:
+						'The order service does not notice that Email is down, because it only talks to Kafka. New events keep collecting in the topic, which keeps them for a set retention period, seven days by default.',
 					down: ['e'],
 					send: [['o', 'k']]
 				},
 				{
+					title: 'Resume from the offset',
 					say: 'When it returns, Email carries on from where it stopped. Nothing is lost.',
+					detail:
+						'On restart, Email reads its last committed offset and processes everything after it. If it crashed after sending an email but before committing, that event is read again, which is why consumers must be safe to run twice.',
 					send: [['k', 'e']],
 					light: ['e']
 				}
@@ -1351,19 +1647,34 @@ export const architecture: Topic[] = [
 				{ from: 'b', to: 'h' }
 			],
 			steps: [
-				{ say: 'A headless hook handles paging and state, and draws nothing.', light: ['h'] },
 				{
+					title: 'A headless hook',
+					say: 'A headless hook handles paging and state, and draws nothing.',
+					detail:
+						'A hook like useDataList holds the current page, page size, loading state and the fetched items, and offers functions such as nextPage(). It returns data and functions only, no HTML or CSS, so it has no opinion about how anything looks.',
+					light: ['h']
+				},
+				{
+					title: 'Style the product table',
 					say: 'The product table uses it and decides how rows should look.',
+					detail:
+						'The product table calls the hook and draws its items as table rows with its own columns and styling. All the paging logic comes from the hook, so the table component is mostly markup.',
 					send: [['a', 'h']],
 					light: ['a']
 				},
 				{
+					title: 'Reuse for tour cards',
 					say: 'The tour cards reuse the same logic with a completely different look.',
+					detail:
+						'The tour card grid calls the same hook and draws each item as a card with a photo. Behaviour such as loading the next page stays identical, even though the two screens look nothing alike.',
 					send: [['b', 'h']],
 					light: ['b']
 				},
 				{
+					title: 'Fix once, fix everywhere',
 					say: 'Fix a paging bug once, and both screens get the fix.',
+					detail:
+						'Because paging lives in one place, a bug like skipping the last item on a page is fixed once and every screen using the hook gets the fix. Without the hook, each screen would carry its own copy of the logic, and its own copy of the bug.',
 					set: { h: 'useDataList\nbug fixed' },
 					send: [
 						['h', 'a'],
@@ -1417,24 +1728,42 @@ export const architecture: Topic[] = [
 				{ from: 's', to: 'f', plain: true }
 			],
 			steps: [
-				{ say: 'Take one scenario: a customer places an order.', light: ['s'] },
 				{
+					title: 'Pick a scenario',
+					say: 'Take one scenario: a customer places an order.',
+					detail:
+						'A scenario is a concrete use case written as a short sequence of steps. Walking one scenario through each of the four views checks that they describe the same system, and shows up gaps, such as a step no view explains.',
+					light: ['s']
+				},
+				{
+					title: 'Logical view',
 					say: 'Logical: which objects are involved? Order, Customer and Product.',
+					detail:
+						'The logical view shows the main concepts and how they relate: a Customer places an Order containing Products. It is what end users and analysts care about, and it is usually drawn as class or domain diagrams.',
 					send: [['s', 'l']],
 					light: ['l']
 				},
 				{
+					title: 'Process view',
 					say: 'Process: what runs in parallel? Payment and stock checks at the same time.',
+					detail:
+						'The process view shows what runs at the same time and how those parts talk. Checking payment and stock in parallel cuts waiting time, but raises new questions, such as what happens when one check passes and the other fails.',
 					send: [['s', 'p']],
 					light: ['p']
 				},
 				{
+					title: 'Development view',
 					say: 'Development: which package holds this code, and which team owns it?',
+					detail:
+						'The development view maps the design onto code: modules, packages, libraries and the teams that own them. It answers practical questions such as where a change should go and which builds it will trigger.',
 					send: [['s', 'd']],
 					light: ['d']
 				},
 				{
+					title: 'Physical view',
 					say: 'Physical: which servers does the request actually touch?',
+					detail:
+						'The physical view shows machines, containers and networks, such as a load balancer, two app servers and a database in another data centre. Operations engineers use it to plan capacity, failover and security boundaries.',
 					send: [['s', 'f']],
 					light: ['f']
 				}
@@ -1492,32 +1821,47 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Create a pending order',
 					say: 'A customer orders. The orchestrator asks Orders to create the order as pending.',
+					detail:
+						'Orders commits a local transaction that saves the order with the status pending. It is not confirmed yet, and because sagas give no isolation, other requests can already see this half-finished order, so screens should show it as pending.',
 					send: [['orch', 'ord']],
 					set: { ord: 'Orders\npending' },
 					light: ['ord']
 				},
 				{
+					title: 'Charge and commit',
 					say: 'Next, Payments charges the card and commits in its own database.',
+					detail:
+						'Payments charges the card and commits in its own database straight away. No lock is held across services, which keeps each step fast, but it means the charge is real even though the saga as a whole may still fail.',
 					send: [['orch', 'pay']],
 					set: { ord: 'Orders\npending', pay: 'Payments\ncharged' },
 					light: ['pay']
 				},
 				{
+					title: 'A step fails',
 					say: 'Stock is asked to reserve the item, but it has just sold out. This step fails.',
+					detail:
+						'Stock finds nothing left and returns a failure. The orchestrator saves the saga state, including how far it got, in its own database, so it still knows what to undo even if it crashes and restarts in the middle.',
 					send: [['orch', 'stock']],
 					set: { ord: 'Orders\npending', pay: 'Payments\ncharged', stock: 'Stock\nsold out' },
 					down: ['stock']
 				},
 				{
+					title: 'Refund the card',
 					say: 'There is no shared rollback, so the orchestrator runs a compensation: refund the card.',
+					detail:
+						'A committed charge cannot be un-committed, so the orchestrator asks Payments for a new action that reverses its effect: a refund. Compensations run in reverse order and must be safe to repeat, because the refund request may time out and be sent twice.',
 					send: [['orch', 'pay']],
 					set: { ord: 'Orders\npending', pay: 'Payments\nrefunded', stock: 'Stock\nsold out' },
 					down: ['stock'],
 					light: ['pay']
 				},
 				{
+					title: 'Cancel the order',
 					say: 'Then it cancels the order. Every service agrees again, just a moment later than one database would.',
+					detail:
+						'Orders moves the order from pending to cancelled, and all three services agree again. This is eventual consistency: for a short time the data disagreed, and the customer may even have seen the charge before the refund appeared.',
 					send: [['orch', 'ord']],
 					set: { ord: 'Orders\ncancelled', pay: 'Payments\nrefunded', stock: 'Stock\nsold out' },
 					light: ['ord']
@@ -1583,7 +1927,10 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Append an event',
 					say: 'A customer places an order. The command side checks the rules and appends an event.',
+					detail:
+						"The command side loads the order's past events, checks the rules, then appends a new event. If two commands for the same order arrive together, a version check on the append rejects the second one, so the history can never split in two.",
 					send: [
 						['user', 'cmd'],
 						['cmd', 'store']
@@ -1592,13 +1939,19 @@ export const architecture: Topic[] = [
 					light: ['store']
 				},
 				{
+					title: 'Nothing is overwritten',
 					say: 'Nothing is overwritten. Each change becomes one more line in the history.',
+					detail:
+						'Instead of updating an order row, the store keeps adding events such as ItemAdded. You get a full audit trail for free, and can answer questions later that nobody thought to ask, like how often items are removed before checkout.',
 					send: [['cmd', 'store']],
 					set: { store: 'OrderPlaced\nItemAdded' },
 					light: ['store']
 				},
 				{
+					title: 'Project a read model',
 					say: 'A projection reads the new events and updates a read model built for the orders screen.',
+					detail:
+						'The projection subscribes to new events and updates a table shaped exactly like the orders screen, with totals already worked out. It runs a moment behind the writes, so a user may briefly not see their own latest change.',
 					send: [
 						['store', 'proj'],
 						['proj', 'read']
@@ -1607,7 +1960,10 @@ export const architecture: Topic[] = [
 					light: ['read']
 				},
 				{
+					title: 'Query the ready row',
 					say: 'The screen asks the query side, which reads one ready-made row. No joins, and no load on the write side.',
+					detail:
+						'Reads hit a table with no joins and no business rules, so they are fast and can be scaled on their own, with read replicas or a cache. Heavy reporting traffic never slows down the command side that takes orders.',
 					send: [
 						['user', 'qry'],
 						['qry', 'read']
@@ -1616,12 +1972,18 @@ export const architecture: Topic[] = [
 					light: ['qry']
 				},
 				{
+					title: 'Read model breaks',
 					say: 'A bug corrupts the read model. Nothing is lost, because the events are the truth.',
+					detail:
+						'A bug in the projection writes wrong totals into the read model. The read model is only a copy worked out from the events, so the damage stays in that copy, and the event store, the real record, is untouched.',
 					set: { store: 'OrderPlaced\nItemAdded' },
 					down: ['read']
 				},
 				{
+					title: 'Replay to rebuild',
 					say: 'Throw the read model away and replay every event to build it again.',
+					detail:
+						'You fix the projection code, empty the read model and feed it every event from the start. With millions of events this can take hours, so teams often build the new copy beside the old one and switch over once it has caught up.',
 					send: [
 						['store', 'proj'],
 						['proj', 'read']
@@ -1681,21 +2043,33 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Context for everyone',
 					say: 'Context is the view for everyone, including people who do not write code.',
+					detail:
+						'Level 1 shows the system as a single box with its users and the outside systems it relies on. It contains no technology words, so managers, sales staff and new joiners can read it in a minute.',
 					light: ['l1']
 				},
 				{
+					title: 'Containers that run',
 					say: 'Container zooms into the system to show what runs: apps, APIs and databases.',
+					detail:
+						'Level 2 opens the box and shows each thing that runs or stores data on its own, like a web app, an API, a database or a queue, along with its technology. Arrows say how they talk, for example JSON over HTTPS.',
 					send: [['l1', 'l2']],
 					light: ['l2']
 				},
 				{
+					title: 'Components inside',
 					say: 'Component zooms into one container to show its main parts.',
+					detail:
+						'Level 3 opens one container and shows its main building blocks, such as controllers, services and repositories, and what each is responsible for. It is meant for the developers who work on that container.',
 					send: [['l2', 'l3']],
 					light: ['l3']
 				},
 				{
+					title: 'Code, rarely drawn',
 					say: 'Code zooms into one component. It is rarely worth drawing by hand.',
+					detail:
+						'Level 4 shows classes and interfaces, much like a UML class diagram. Code changes daily, so a hand-drawn version goes out of date fast, and most IDEs can generate one on the rare occasions you need it.',
 					send: [['l3', 'l4']],
 					light: ['l4']
 				}
@@ -1739,17 +2113,33 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'The system as one box',
 					say: 'The whole system is one box. What is inside does not matter at this level.',
+					detail:
+						'At this level the shop is a black box. Hiding its insides keeps the diagram stable for years, since it only changes when the users or outside dependencies change, not when someone swaps a framework.',
 					light: ['shop']
 				},
-				{ say: 'A shopper places an order.', send: [['user', 'shop']], light: ['user'] },
 				{
+					title: 'A shopper buys',
+					say: 'A shopper places an order.',
+					detail:
+						'People are drawn as person shapes and labelled with their role, here Shopper, rather than a real name. Each arrow gets a short verb, like buys, so the diagram reads almost like a sentence.',
+					send: [['user', 'shop']],
+					light: ['user']
+				},
+				{
+					title: 'Pay through a provider',
 					say: 'The shop relies on an outside provider to take the money.',
+					detail:
+						'The payment provider is an external system: you use it but do not run it. Showing it reminds everyone that if the provider is down, nobody can pay, however healthy your own code is.',
 					send: [['shop', 'pay']],
 					light: ['pay']
 				},
 				{
+					title: 'Email through a service',
 					say: 'It relies on another to send the receipt. These dependencies are the point of this diagram.',
+					detail:
+						'The email service is another outside dependency, with its own sending limits and outages. Listing these makes contracts, data protection reviews and outage planning much easier, which is why this diagram is worth keeping current.',
 					send: [['shop', 'mail']],
 					light: ['mail']
 				}
@@ -1801,7 +2191,10 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Search for a product',
 					say: 'The shopper searches for a product, and the web app asks the search engine.',
+					detail:
+						'The SvelteKit web app sends the search to Catalog, a separate search engine built for fast text queries. Keeping search away from the orders database means a burst of browsing never slows down checkout.',
 					send: [
 						['user', 'web'],
 						['web', 'cat']
@@ -1809,22 +2202,34 @@ export const architecture: Topic[] = [
 					light: ['cat']
 				},
 				{
+					title: 'Call the Orders API',
 					say: 'At checkout, the web app calls the Orders API.',
+					detail:
+						'When the shopper pays, the web app sends the order to the Orders API, usually as JSON over HTTPS. Arrows on a container diagram should carry that kind of label, so readers know both what flows and how it travels.',
 					send: [['web', 'api']],
 					light: ['api']
 				},
 				{
+					title: 'Save the order first',
 					say: 'The order is saved first, because that must never be lost.',
+					detail:
+						'The API writes the order to Postgres and waits for the commit before doing anything else. If the server crashed a second later, the order would still be safe on disk, and every step after this one can be retried.',
 					send: [['api', 'db']],
 					light: ['db']
 				},
 				{
+					title: 'Publish and return',
 					say: 'The API publishes an OrderPlaced event and returns straight away.',
+					detail:
+						'With the order saved, the API puts an OrderPlaced event on Kafka and replies without waiting for the receipt. Saving and publishing are two separate writes, so teams often use an outbox table to make sure no event is lost between them.',
 					send: [['api', 'bus']],
 					light: ['bus']
 				},
 				{
+					title: 'Send the receipt',
 					say: 'A small function reacts to the event and sends the receipt.',
+					detail:
+						'The receipts function runs only when an event arrives, builds the email and hands it to an email service. If it fails, the event is still on the bus and can be retried without the shopper ever noticing.',
 					send: [['bus', 'fn']],
 					light: ['fn']
 				}
@@ -1867,17 +2272,26 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Check the request',
 					say: 'The controller receives the HTTP request and checks it is well formed.',
+					detail:
+						'The order controller parses the HTTP request, checks required fields and types, and rejects bad input with 400 Bad Request. It holds no business rules, so it stays thin and easy to replace.',
 					send: [['web', 'ctl']],
 					light: ['ctl']
 				},
 				{
+					title: 'Apply business rules',
 					say: 'The checkout service holds the actual business rules.',
+					detail:
+						'The checkout service decides whether the order is valid: stock, prices, discounts and limits. Keeping those rules in one component means the same logic applies whether the call came from the web, a mobile app or a test.',
 					send: [['ctl', 'svc']],
 					light: ['svc']
 				},
 				{
+					title: 'Charge through a client',
 					say: 'It charges the card through the payment client.',
+					detail:
+						"The payment client wraps the provider's API, handling authentication, timeouts and error codes, so changing provider means changing only this component. It should also send an idempotency key, so a retried charge is not taken twice.",
 					send: [
 						['svc', 'cli'],
 						['cli', 'pay']
@@ -1885,7 +2299,10 @@ export const architecture: Topic[] = [
 					light: ['cli']
 				},
 				{
+					title: 'Save with the repository',
 					say: 'The repository saves the order. It is the only component that knows SQL.',
+					detail:
+						'The order repository turns an order into SQL inserts and back again. Since nothing else touches the database, a schema change means editing one component, and tests can swap the repository for an in-memory version.',
 					send: [
 						['svc', 'repo'],
 						['repo', 'db']
@@ -1948,22 +2365,34 @@ export const architecture: Topic[] = [
 			],
 			steps: [
 				{
+					title: 'Create an Order',
 					say: 'placeOrder() starts by creating an Order.',
+					detail:
+						'placeOrder() builds an Order object from the cart, and the Order works out its own total() from its lines. Putting that sum on Order keeps the rule in one place instead of copying it into every caller.',
 					send: [['svc', 'order']],
 					light: ['order']
 				},
 				{
+					title: 'Depend on an interface',
 					say: 'It charges through an interface, so it never depends on one payment company.',
+					detail:
+						'CheckoutService holds a reference typed as PaymentClient, an interface with a single charge() method. It knows nothing about cards, banks or HTTP, only that something can take a payment.',
 					send: [['svc', 'port']],
 					light: ['port']
 				},
 				{
+					title: 'The real implementation',
 					say: 'CardPayments is the real implementation behind that interface.',
+					detail:
+						'CardPayments implements PaymentClient and talks to the real payment provider. In UML the dashed arrow means "implements". The app picks which implementation to use at start-up, often through dependency injection.',
 					send: [['card', 'port']],
 					light: ['card']
 				},
 				{
+					title: 'Swap in a fake',
 					say: 'Swap it for a fake in tests, and CheckoutService does not change.',
+					detail:
+						'In tests, FakePayments implements the same interface and simply records what it was asked to charge. Tests then run with no network and no real card, and can make charge() fail on purpose to check the error handling.',
 					set: { card: 'FakePayments\n+ charge()' },
 					light: ['card']
 				}

@@ -217,23 +217,66 @@ export const path: Sketch = {
 		{ from: 'g', to: 'h' }
 	],
 	steps: [
-		{ say: 'Start by learning to break problems down and write code.', light: ['a'] },
-		{ say: 'Algorithms teach you what makes code fast or slow.', send: [['a', 'b']], light: ['b'] },
 		{
+			title: 'Learn to program',
+			say: 'Start by learning to break problems down and write code.',
+			detail:
+				'This stage covers variables, loops, functions and splitting a big problem into small ones, plus daily tools like the shell and Git. It comes first because every later course assumes you can read and write code without fighting the syntax. CS50x builds this through weekly problem sets in C and Python.',
+			light: ['a']
+		},
+		{
+			title: 'Algorithms and speed',
+			say: 'Algorithms teach you what makes code fast or slow.',
+			detail:
+				'Here you learn sorting, searching, hash tables, trees and graphs, and how to describe cost with big O notation. It follows programming because you need working code before you can judge its speed. It is the difference between scanning a million rows and finding one in about 20 steps with binary search.',
+			send: [['a', 'b']],
+			light: ['b']
+		},
+		{
+			title: 'Build real software',
 			say: 'Then build software that other people can read and change.',
+			detail:
+				'This stage is about code other people can live with: tests, version control, code review, design patterns and clear docs. It comes after algorithms because the hard part is now size and change over time, not only correctness. Full Stack Open has you build and deploy a whole web app with tests and CI.',
 			send: [['b', 'c']],
 			light: ['c']
 		},
-		{ say: 'Learn what really happens beneath your code.', send: [['c', 'd']], light: ['d'] },
 		{
+			title: 'Beneath your code',
+			say: 'Learn what really happens beneath your code.',
+			detail:
+				'You study logic gates, CPUs, memory, operating systems and networks, often by building small versions of each. It sits here because production problems, like a full disk or a dropped TCP connection, only make sense once you know these layers. Nand2Tetris builds a whole computer starting from NAND gates.',
+			send: [['c', 'd']],
+			light: ['d']
+		},
+		{
+			title: 'Databases',
 			say: 'Understand the part of every system that must not lose anything: the data.',
+			detail:
+				'This stage opens up how a database stores pages on disk, uses indexes such as B-trees, plans queries and keeps transactions safe. It builds on the operating systems stage, because a database is mostly careful management of memory and disk. Lost or corrupted data is often the one mistake a team cannot undo.',
 			send: [['d', 'e']],
 			light: ['e']
 		},
-		{ say: 'Learn to ship your work and keep it running.', send: [['e', 'f']], light: ['f'] },
-		{ say: 'Finally, make many machines behave as one system.', send: [['f', 'g']], light: ['g'] },
 		{
+			title: 'Cloud and DevOps',
+			say: 'Learn to ship your work and keep it running.',
+			detail:
+				'You learn containers, CI/CD pipelines, cloud services and monitoring, so code moves safely from a laptop to real users. It comes late because it uses everything before it: programs, networks and databases all have to be packaged and watched. The Helsinki DevOps courses teach it through hands-on exercises.',
+			send: [['e', 'f']],
+			light: ['f']
+		},
+		{
+			title: 'Distributed systems',
+			say: 'Finally, make many machines behave as one system.',
+			detail:
+				'This stage covers replication, consensus algorithms like Raft, partial failures and the trade-offs behind the CAP theorem. It comes last because it assumes networks, databases and operations are already familiar. MIT 6.5840 has you build a fault-tolerant key-value store in Go that keeps working while servers crash.',
+			send: [['f', 'g']],
+			light: ['g']
+		},
+		{
+			title: 'Keep learning',
 			say: 'There is no finish line, but now you can learn anything else you need.',
+			detail:
+				'With these foundations, new tools and languages turn out to be variations on ideas you already know. The rest is practice: build projects, read design docs and the SRE book, and study how real outages happened. Public post-mortems from large companies are a good free source.',
 			send: [['g', 'h']],
 			light: ['h']
 		}
