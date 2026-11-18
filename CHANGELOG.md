@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/Three-Bugs-Studio/3binfrastructure/compare/v0.3.0...v0.4.0) (2026-11-18)
+
+
+### Features
+
+* lesson-style demo player with a title and explanation for every step ([#6](https://github.com/Three-Bugs-Studio/3binfrastructure/issues/6)) ([555df16](https://github.com/Three-Bugs-Studio/3binfrastructure/commit/555df167b988d9896a00d162a620505bd55883e7))
+
 ## [0.3.0](https://github.com/Three-Bugs-Studio/3binfrastructure/compare/v0.2.0...v0.3.0) (2026-11-15)
 
 
